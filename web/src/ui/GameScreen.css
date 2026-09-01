@@ -1,0 +1,173 @@
+/* ---------------------------------------------------------------------------
+ * The board screen.
+ *
+ * A fixed-height flex column: header, banner, board, status strip, keypad.
+ * Only the board is flexible (`flex: 1 1 auto; min-height: 0`), so when space
+ * runs short it is the board that gives way — the keypad can never be pushed
+ * off the bottom. safe-area insets keep it clear of notches and home bars in
+ * standalone PWA mode.
+ * ------------------------------------------------------------------------- */
+
+.nd-screen {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--nd-bg);
+  color: var(--nd-on-surface);
+  padding-left: var(--nd-safe-left);
+  padding-right: var(--nd-safe-right);
+  padding-bottom: var(--nd-safe-bottom);
+  overflow: hidden;
+}
+
+@supports (height: 100dvh) {
+  .nd-screen {
+    height: 100dvh;
+  }
+}
+
+.nd-screen__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 var(--nd-page-pad);
+  width: 100%;
+}
+
+.nd-screen__board {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.nd-screen__keypad {
+  flex: 0 0 auto;
+  width: 100%;
+  padding: 10px 0 12px;
+}
+
+/* Occupies no height while the game is live, so the board keeps the space. */
+.nd-gameover {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 500px;
+  padding-top: 8px;
+}
+
+.nd-gameover__message {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Shared chrome (app bar, icon buttons, filled button) lives in Chrome.css. */
+
+/* --- Drawer --------------------------------------------------------------- */
+
+.nd-scrim {
+  position: fixed;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  width: 100%;
+  background: rgb(0 0 0 / 45%);
+  animation: nd-fade-in 140ms ease-out;
+  z-index: 10;
+}
+
+.nd-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 11;
+  width: min(310px, 84vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--nd-surface);
+  color: var(--nd-on-surface);
+  border-right: 1px solid var(--nd-outline);
+  box-shadow: 2px 0 12px rgb(0 0 0 / 25%);
+  padding: calc(16px + var(--nd-safe-top)) 0 calc(16px + var(--nd-safe-bottom))
+    var(--nd-safe-left);
+  animation: nd-drawer-in 180ms ease-out;
+}
+
+.nd-drawer__head {
+  padding: 8px 24px 16px;
+}
+
+.nd-drawer__head h2 {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+}
+
+.nd-drawer__head p {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  color: var(--nd-on-surface-variant);
+}
+
+.nd-drawer__divider {
+  height: 1px;
+  margin: 0 0 8px;
+  background: var(--nd-outline);
+  opacity: 0.4;
+}
+
+.nd-drawer__item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: calc(100% - 24px);
+  min-height: 52px;
+  margin: 2px 12px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 26px;
+  background: transparent;
+  color: var(--nd-on-surface);
+  font-size: 1rem;
+  text-align: left;
+}
+
+.nd-drawer__item:hover {
+  background: var(--nd-primary-container);
+  color: var(--nd-on-primary-container);
+}
+
+@keyframes nd-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nd-drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nd-scrim,
+  .nd-drawer {
+    animation: none;
+  }
+}

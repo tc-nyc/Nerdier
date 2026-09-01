@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  These exist only for the platform window (splash background, system bars)
+  before Compose takes over. The authoritative palette is Color.kt; keep these
+  two values in step with LightBackground / DarkBackground.
+-->
+<resources>
+    <color name="nerdier_window_background">#FAFAFC</color>
+    <color name="nerdier_window_background_dark">#111316</color>
+    <color name="nerdier_correct">#2E7D32</color>
+    <color name="nerdier_present">#6C3FB0</color>
+    <color name="nerdier_absent">#2B2E33</color>
+</resources>

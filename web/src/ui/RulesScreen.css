@@ -1,0 +1,44 @@
+/* How to Play. Copy lives in strings.tsx, verbatim from the Android build, so
+ * this file stays a layout file. */
+
+.nd-rules__intro {
+  margin: 8px 0 0;
+  font-size: 1.0625rem;
+}
+
+.nd-rules h2 {
+  margin: 26px 0 8px;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.nd-rules ul {
+  margin: 0;
+  padding-left: 22px;
+  color: var(--nd-on-surface-variant);
+}
+
+.nd-rules li {
+  margin: 6px 0;
+}
+
+.nd-rules__key {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nd-rules__key li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 10px 0;
+  color: var(--nd-on-surface-variant);
+}
+
+/* The colour key uses real board tiles, at a fixed size, so what the player
+ * sees here is exactly what the board draws. */
+.nd-rules__key .nd-tile {
+  --nd-tile-size: 44px;
+  flex: 0 0 auto;
+}

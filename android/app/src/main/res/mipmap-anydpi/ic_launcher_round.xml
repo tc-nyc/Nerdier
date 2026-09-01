@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pre-API-26 launcher icon. Adaptive icons (mipmap-anydpi-v26) only apply
+     from Android 8; minSdk is 24, so Android 7.0/7.1 needs this fallback or
+     @mipmap/ic_launcher fails to resolve. Layer-list keeps it vector-only.
+     Replace via Android Studio's Image Asset Studio if you want real artwork. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/ic_launcher_background" />
+    <item
+        android:drawable="@drawable/ic_launcher_foreground"
+        android:top="-18dp"
+        android:bottom="-18dp"
+        android:left="-18dp"
+        android:right="-18dp" />
+</layer-list>

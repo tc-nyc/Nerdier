@@ -1,0 +1,172 @@
+/* ---------------------------------------------------------------------------
+ * The entry keypad.
+ *
+ * Five keys per row rather than ten: at 320px, ten keys would be ~28px wide,
+ * well under the 44px tap-target floor. Five keys give ~57px each at 320px and
+ * the whole pad is four rows tall, which leaves the board its space.
+ *
+ * Keys inherit the board's green / purple / black semantics, so a character
+ * the player has eliminated reads as eliminated everywhere. The state is also
+ * in each key's accessible name — colour is never the only channel.
+ * ------------------------------------------------------------------------- */
+
+.nd-keypad {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 500px;
+  margin-inline: auto;
+}
+
+.nd-keypad__row {
+  display: flex;
+  gap: 6px;
+}
+
+.nd-key {
+  flex: 1 1 0;
+  min-width: 0;
+  /* 44px is the floor; the key grows with the viewport up to 52px. */
+  height: clamp(44px, 7.2vh, 52px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px;
+  border: 1.5px solid var(--nd-key-idle);
+  border-radius: 8px;
+  background: var(--nd-key-idle);
+  color: var(--nd-on-key-idle);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.nd-key:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.nd-key:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+/* ---------------------------------------------------------------------------
+ * UNTRIED character keys — white in both themes.
+ *
+ * `empty` is what Keypad.tsx falls back to for a character with no score yet
+ * (`keyStates[char] ?? 'empty'`); `filled` is included because the accessible
+ * name says "not yet tried" for both, and the colour must not disagree with
+ * the screen reader. Scored keys (correct / present / absent) are untouched,
+ * so the monotonic colouring still only ever moves forwards.
+ * ------------------------------------------------------------------------- */
+.nd-key--empty,
+.nd-key--filled {
+  background: var(--nd-key-untried-fill);
+  border-color: var(--nd-key-untried-border);
+  color: var(--nd-on-key-untried);
+}
+
+/* Hover only where there is a real pointer: on a touch screen :hover sticks to
+ * the last key tapped and would leave a phantom highlight behind. The white is
+ * tinted rather than replaced, and the border steps up, so the change is
+ * legible in the dark theme too, where a white key has no page contrast to
+ * spare. */
+@media (hover: hover) and (pointer: fine) {
+  .nd-key--empty:not(:disabled):hover,
+  .nd-key--filled:not(:disabled):hover {
+    background: var(--nd-key-untried-hover);
+    border-color: var(--nd-key-untried-border-strong);
+  }
+}
+
+/* A white key pressed on a near-white page has nothing to say for itself with
+ * the 1px nudge alone, so the fill goes grey for the duration. Ink stays
+ * #1a1c1f: 13.17:1 on the pressed fill. */
+.nd-key--empty:not(:disabled):active,
+.nd-key--filled:not(:disabled):active {
+  background: var(--nd-key-untried-active);
+  border-color: var(--nd-key-untried-border-strong);
+}
+
+/* The global focus ring is `outline-offset: 2px` with a 4px radius. Both are
+ * wrong here, for the same reasons they were wrong on the board: the pad's gap
+ * is 6px, so a 3px ring pushed out 2px all but touches the neighbouring key,
+ * and the key would change shape on focus. Offset 0 keeps the ring in the gap,
+ * against the page, where --nd-focus is 7.03:1 (light) and 10.45:1 (dark) —
+ * the dark theme's pale #b6beff is only 1.78:1 on white, so a ring that
+ * strayed onto the key itself would half-disappear. Scoped away from ENTER and
+ * DELETE, which keep the global treatment. */
+.nd-key:not(.nd-key--action):focus-visible {
+  outline: 3px solid var(--nd-focus);
+  outline-offset: 0;
+  border-radius: 8px;
+}
+
+/* Disabled (game over). The shared `opacity: 0.45` is fine over a coloured
+ * key, but a white key at 45% over a near-white page composites to #fcfcfd
+ * with a 1.57:1 border and a 2.88:1 glyph — the character rows would fade off
+ * the page entirely. Untried keys therefore drop the opacity and grey out
+ * explicitly: the old idle grey reads as inert, keeps the key visible, and is
+ * plainly not the white of "untried and still available".
+ * ENTER and DELETE keep the opacity treatment unchanged. */
+.nd-key--empty:disabled,
+.nd-key--filled:disabled {
+  opacity: 1;
+  background: var(--nd-key-idle);
+  border-color: var(--nd-outline);
+  color: var(--nd-on-surface-variant);
+}
+
+.nd-key--correct {
+  background: var(--nd-correct);
+  border-color: var(--nd-correct-border);
+  color: var(--nd-on-correct);
+}
+
+.nd-key--present {
+  background: var(--nd-present);
+  border-color: var(--nd-present-border);
+  color: var(--nd-on-present);
+}
+
+/* Same trick as the board: a bright border keeps an eliminated (black) key
+ * visible against a near-black surface in dark mode. */
+.nd-key--absent {
+  background: var(--nd-absent);
+  border-color: var(--nd-absent-border);
+  color: var(--nd-on-absent);
+}
+
+.nd-key--action {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.nd-key--delete {
+  background: var(--nd-surface-variant);
+  border-color: var(--nd-outline);
+  color: var(--nd-on-surface-variant);
+}
+
+.nd-key--enter {
+  background: var(--nd-primary);
+  border-color: var(--nd-primary);
+  color: var(--nd-on-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nd-key {
+    transition-duration: 1ms;
+  }
+  .nd-key:not(:disabled):active {
+    transform: none;
+  }
+}

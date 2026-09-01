@@ -1,0 +1,46 @@
+/* Transient validator feedback, shown directly above the board.
+ *
+ * The slot keeps a fixed minimum height whether or not a message is showing,
+ * so the board never jumps when one appears. It is a polite live region, so a
+ * screen reader reads the reason out without the player hunting for it.
+ *
+ * Pair this with a shake on the offending row (see TileGrid) — together they
+ * say "rejected, and your row is still yours to edit". */
+
+.nd-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 2px 0;
+}
+
+.nd-banner__message {
+  max-width: 34rem;
+  padding: 8px 14px;
+  border: 1px solid var(--nd-error);
+  border-radius: 10px;
+  background: var(--nd-error-container);
+  color: var(--nd-on-error-container);
+  font-size: 0.875rem;
+  text-align: center;
+  animation: nd-banner-in 160ms ease-out;
+}
+
+@keyframes nd-banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nd-banner__message {
+    animation: none;
+  }
+}

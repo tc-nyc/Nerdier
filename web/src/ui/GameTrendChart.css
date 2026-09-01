@@ -1,0 +1,116 @@
+/* This Month's per-game line chart. Plain SVG in a fixed user-space viewBox,
+ * scaled uniformly to the container: nothing is measured in JavaScript, there
+ * is no resize observer, and the geometry that works at 320px is the geometry
+ * that ships everywhere. */
+
+.nd-trend {
+  width: 100%;
+}
+
+.nd-trend__axis-note {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--nd-on-surface-variant);
+}
+
+.nd-trend__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* The whole chart is one uniform scale, so a wide screen would blow the
+   * strokes and numerals up with it. Past ~420px the chart stops growing and
+   * simply centres. */
+  max-width: 420px;
+  margin-inline: auto;
+  overflow: visible;
+}
+
+.nd-trend__grid {
+  stroke: var(--nd-chart-grid);
+  stroke-width: 1;
+}
+
+.nd-trend__ylabel {
+  fill: var(--nd-on-surface-variant);
+  font-size: 9px;
+  font-weight: 600;
+  text-anchor: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.nd-trend__xlabel {
+  fill: var(--nd-on-surface-variant);
+  font-size: 9px;
+  text-anchor: start;
+}
+
+.nd-trend__xlabel--end {
+  text-anchor: end;
+}
+
+.nd-trend__line {
+  fill: none;
+  stroke: var(--nd-chart-line);
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.nd-trend__point--win {
+  fill: var(--nd-chart-point-win);
+  stroke: none;
+}
+
+/* A loss is "six guesses AND unsolved", which a filled point on the bottom row
+ * would read as a merely-poor win. It gets a second channel — hollow, not just
+ * a different hue — so it survives both a monochrome print and a red/green
+ * colour vision deficiency. The hole is filled with the card colour rather than
+ * left transparent so the line does not show through the middle of it. */
+.nd-trend__point--loss {
+  fill: var(--nd-chart-plot);
+  stroke: var(--nd-chart-point-loss);
+}
+
+.nd-trend__legend {
+  display: flex;
+  gap: 14px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.75rem;
+  color: var(--nd-on-surface-variant);
+}
+
+.nd-trend__legend li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nd-trend__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.nd-trend__swatch--win {
+  background: var(--nd-chart-point-win);
+}
+
+.nd-trend__swatch--loss {
+  background: var(--nd-chart-plot);
+  border: 2px solid var(--nd-chart-point-loss);
+}
+
+.nd-trend__caption {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--nd-on-surface-variant);
+}
+
+.nd-trend__empty {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--nd-on-surface-variant);
+}

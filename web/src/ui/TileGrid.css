@@ -1,0 +1,288 @@
+/* ---------------------------------------------------------------------------
+ * The 6 x 8 guess board.
+ *
+ * How this fits a 320px phone
+ * ---------------------------
+ * The grid never hardcodes a tile size. The tile edge is the smaller of a
+ * width-derived and a height-derived fit, clamped to a sane range — the CSS
+ * equivalent of the Android BoxWithConstraints min(widthFit, heightFit):
+ *
+ *   --nd-tile-size: clamp(22px, min(10.4vw, 6.2dvh), 52px)
+ *
+ * At 320px wide:  10.4vw = 33.3px  ->  board = 8*33.3 + 7*3.5 = 291px.
+ *                 The page has ~9.6px of padding a side, so 291 < 300. No
+ *                 horizontal scroll, ever.
+ * At 430px wide:  10.4vw = 44.7px  ->  board = 383px inside 404px of content.
+ *
+ * The 6.2dvh term is what keeps the keypad on screen: on a short viewport the
+ * tiles shrink instead of the board pushing the pad off the bottom. The board
+ * also sits in a `flex: 1 1 auto; min-height: 0` slot, so it is the board that
+ * gives way, never the keypad.
+ * ------------------------------------------------------------------------- */
+
+.nd-grid {
+  --nd-tile-size: clamp(22px, min(10.4vw, 6.2vh), 52px);
+  /* The win celebration is parked against this box and works out where the
+   * winning row is from --nd-tile-size and --nd-row-gap. See WinAnimation.css. */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--nd-row-gap);
+  align-items: center;
+  justify-content: center;
+  margin-inline: auto;
+}
+
+@supports (height: 1dvh) {
+  .nd-grid {
+    --nd-tile-size: clamp(22px, min(10.4vw, 6.2dvh), 52px);
+  }
+}
+
+.nd-grid__row {
+  display: grid;
+  grid-template-columns: repeat(8, var(--nd-tile-size));
+  gap: var(--nd-tile-gap);
+}
+
+.nd-tile {
+  width: var(--nd-tile-size);
+  aspect-ratio: 1 / 1;
+  /* Active-row tiles are <button>s; every other tile is a <div>. One rule set
+   * covers both, so the two never drift apart by a pixel. */
+  position: relative;
+  padding: 0;
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--nd-tile-empty-border);
+  border-radius: var(--nd-radius);
+  background: transparent;
+  color: var(--nd-on-surface);
+  font-size: calc(var(--nd-tile-size) * 0.46);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  user-select: none;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+/* An UNUSED tile — nothing ever typed there — is white in both themes, so the
+ * board reads as a sheet of blank cells waiting to be filled. Only `empty`: a
+ * typed-but-unsubmitted tile has been used and keeps the outline-only look, so
+ * "white" means "still to do" and the white area shrinks as the row fills. */
+.nd-tile--empty {
+  background: var(--nd-tile-empty-fill);
+  border-color: var(--nd-tile-empty-border);
+}
+
+.nd-tile--filled {
+  background: transparent;
+  border-color: var(--nd-tile-filled-border);
+}
+
+.nd-tile--correct {
+  background: var(--nd-correct);
+  border-color: var(--nd-correct-border);
+  color: var(--nd-on-correct);
+}
+
+.nd-tile--present {
+  background: var(--nd-present);
+  border-color: var(--nd-present-border);
+  color: var(--nd-on-present);
+}
+
+/* The border is what keeps a black tile from disappearing into a near-black
+ * page in dark mode. It is always drawn, never conditional. */
+.nd-tile--absent {
+  background: var(--nd-absent);
+  border-color: var(--nd-absent-border);
+  color: var(--nd-on-absent);
+}
+
+/* Staggered reveal: column N waits 45ms longer than column N-1, so a submitted
+ * row lights up left to right in 7*45 + 220 = 535ms — under the 600ms budget.
+ * It is pure presentation over already-committed state and never gates input. */
+.nd-tile--revealed {
+  transition-delay: calc(var(--nd-col, 0) * 45ms);
+  animation: nd-tile-flip 220ms ease both;
+  animation-delay: calc(var(--nd-col, 0) * 45ms);
+}
+
+@keyframes nd-tile-flip {
+  0% {
+    transform: scaleY(0.55);
+  }
+  60% {
+    transform: scaleY(1.06);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+/* A shake means "this row was rejected and was NOT consumed". 380ms, matching
+ * the Android keyframe spec. */
+.nd-grid__row--shake {
+  animation: nd-row-shake 380ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes nd-row-shake {
+  0% {
+    transform: translateX(0);
+  }
+  13% {
+    transform: translateX(-9px);
+  }
+  26% {
+    transform: translateX(9px);
+  }
+  39% {
+    transform: translateX(-7px);
+  }
+  55% {
+    transform: translateX(7px);
+  }
+  71% {
+    transform: translateX(-3px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* --- The caret ------------------------------------------------------------
+ * With crossword-style entry the player can type at any of the eight
+ * positions, so the board needs a caret the way a text field does.
+ *
+ * It is deliberately cyan (--nd-cursor). Green, purple and black all carry
+ * scoring meaning and the indigo --nd-primary is the chrome accent, so a
+ * fourth hue is the only way the caret cannot be misread as a result. The same
+ * hue is used in both themes — darkened for light, lightened for dark — so it
+ * clears 4.5:1 against the page either way.
+ *
+ * Three signals, not one: the tile's border turns cyan, the fill takes a faint
+ * cyan wash, and a solid bar is drawn along the bottom edge. The bar is what
+ * carries it for a player who cannot separate the hues. The state is in the
+ * accessible name too ("cursor here") and on aria-current.
+ * ------------------------------------------------------------------------- */
+
+.nd-tile--interactive {
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Tiles are sized by the board, not by the 48px tap-target floor — eight of
+ * them have to fit across a 320px phone. The hit area is therefore exactly the
+ * tile, never less: no inset padding, no shrunken child. The keypad below is
+ * the 48px-plus target for typing; these are for aiming the caret. */
+@media (hover: hover) {
+  .nd-tile--interactive:hover {
+    border-color: var(--nd-cursor);
+    background: var(--nd-cursor-soft);
+  }
+
+  /* --nd-cursor-soft is translucent, so on a white tile it would composite with
+   * the page and turn the tile dark in dark mode. Hovering an unused tile
+   * therefore tints the white rather than replacing it. */
+  .nd-tile--interactive.nd-tile--empty:hover {
+    border-color: var(--nd-cursor-on-tile);
+    background: var(--nd-cursor-on-tile-soft);
+  }
+}
+
+.nd-tile--caret {
+  border-color: var(--nd-cursor);
+  background: var(--nd-cursor-soft);
+  box-shadow: inset 0 0 0 1px var(--nd-cursor);
+}
+
+/* The caret on a white (unused) tile. Two problems the transparent tile did not
+ * have, both solved here rather than left to chance:
+ *   1. --nd-cursor-soft is a translucent wash. Over a white fill it composites
+ *      with whatever is behind the tile, which in dark mode is the near-black
+ *      page — the caret tile would go dark while its neighbours stayed white.
+ *      An opaque tint keeps it white-with-a-cyan-cast in both themes.
+ *   2. The dark theme's light cyan #6fd3f7 is 1.7:1 on white, i.e. invisible.
+ *      --nd-cursor-on-tile is the darker cyan of the same family, 6.4:1 on
+ *      white, and is used for all three caret signals: border, wash and bar. */
+.nd-tile--caret.nd-tile--empty {
+  border-color: var(--nd-cursor-on-tile);
+  background: var(--nd-cursor-on-tile-soft);
+  box-shadow: inset 0 0 0 1px var(--nd-cursor-on-tile);
+}
+
+.nd-tile--empty .nd-tile__caret {
+  background: var(--nd-cursor-on-tile);
+}
+
+/* A caret on an already-scored tile keeps the score's fill; only the border
+ * and the bar change, so the green/purple/black reading survives. */
+.nd-tile--caret.nd-tile--correct {
+  background: var(--nd-correct);
+}
+.nd-tile--caret.nd-tile--present {
+  background: var(--nd-present);
+}
+.nd-tile--caret.nd-tile--absent {
+  background: var(--nd-absent);
+}
+
+/* The global focus ring sits at outline-offset: 2px. On this board the tile gap
+ * is only clamp(3px, 1.1vw, 6px), so at 320px a 3px ring offset by 2px would
+ * spill onto the neighbouring tile — and the dark theme's pale --nd-focus is
+ * 1.8:1 on white, so the ring would half-vanish exactly where it overlapped.
+ * Offset 0 keeps the whole ring inside the gap, against the page, where it is
+ * high contrast in both themes. */
+.nd-tile--interactive:focus-visible {
+  outline: 3px solid var(--nd-focus);
+  outline-offset: 0;
+  /* The global rule also drops the radius to 4px; a tile must not change shape
+   * just because it took focus. */
+  border-radius: var(--nd-radius);
+}
+
+.nd-tile__caret {
+  position: absolute;
+  left: 16%;
+  right: 16%;
+  bottom: 7%;
+  height: max(2px, 9%);
+  border-radius: 2px;
+  background: var(--nd-cursor);
+  animation: nd-caret-blink 1150ms ease-in-out infinite;
+}
+
+/* A text-cursor blink, slow, and never all the way off: at 0.87Hz and a few
+ * square millimetres this is nowhere near a flash hazard, and the bar stays
+ * findable at every point in the cycle. */
+@keyframes nd-caret-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nd-tile,
+  .nd-tile--revealed,
+  .nd-grid__row--shake {
+    animation: none;
+    transition-duration: 1ms;
+    transition-delay: 0ms;
+  }
+
+  .nd-tile__caret {
+    animation: none;
+    opacity: 1;
+  }
+}

@@ -1,0 +1,75 @@
+/* Today / This Week / This Month, each a card with four headline numbers and
+ * the wins-by-guess-count histogram. */
+
+.nd-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.nd-progress__card {
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--nd-outline) 40%, transparent);
+  border-radius: 14px;
+  background: var(--nd-surface);
+  box-shadow: var(--nd-shadow);
+}
+
+.nd-progress__card h2 {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.nd-progress__stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.nd-progress__stat {
+  text-align: center;
+  min-width: 0;
+}
+
+.nd-progress__value {
+  margin: 0;
+  font-size: clamp(1.25rem, 6vw, 1.5rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--nd-on-surface);
+}
+
+.nd-progress__label {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  color: var(--nd-on-surface-variant);
+}
+
+.nd-progress__divider {
+  height: 1px;
+  margin: 16px 0 12px;
+  background: color-mix(in srgb, var(--nd-outline) 40%, transparent);
+}
+
+.nd-progress__subhead {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--nd-on-surface-variant);
+}
+
+/* Footnote for the Avg guesses definition. Set below the cards so it reads as
+ * a note on the screen, not a caption on the last one. */
+.nd-progress__note {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--nd-on-surface-variant);
+}
+
+.nd-progress__empty {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--nd-on-surface-variant);
+}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Deliberately minimal, and deliberately parented on a framework theme rather
+  than Theme.Material3.* / Theme.AppCompat.*: the app draws entirely in Compose
+  and the whole palette lives in Color.kt, so pulling in the Material Components
+  view library or AppCompat just to satisfy a manifest attribute would be a
+  dependency we do not otherwise need.
+
+  This theme only paints the window before the first Compose frame.
+-->
+<resources>
+    <style name="Theme.Nerdier" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/nerdier_window_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

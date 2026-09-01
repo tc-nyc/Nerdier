@@ -1,0 +1,74 @@
+/* Wins-by-guess-count histogram, drawn with plain CSS — no charting library.
+ * Bars are a percentage height inside a fixed-height track, so nothing is
+ * measured in JavaScript and there is no divide-by-zero to trip over. */
+
+.nd-chart {
+  width: 100%;
+}
+
+.nd-chart__cols {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.nd-chart__col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.nd-chart__count {
+  margin: 0 0 4px;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--nd-on-surface-variant);
+}
+
+.nd-chart__track {
+  height: 86px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.nd-chart__bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: var(--nd-chart-bar);
+  transition: height 200ms ease;
+}
+
+/* A zero column keeps a visible stub so the axis still reads as six columns
+ * rather than a gap. */
+.nd-chart__bar--zero {
+  background: var(--nd-chart-bar-muted);
+}
+
+.nd-chart__axis {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.nd-chart__axis span {
+  flex: 1 1 0;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--nd-on-surface-variant);
+}
+
+.nd-chart__caption {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: var(--nd-on-surface-variant);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nd-chart__bar {
+    transition: none;
+  }
+}

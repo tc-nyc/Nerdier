@@ -1,0 +1,85 @@
+/* Chrome shared by all three screens: the app bar, its icon buttons, the
+ * filled button, and the scrolling shell the Rules and Progress screens use. */
+
+.nd-appbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 56px;
+  margin-top: var(--nd-safe-top);
+  padding: 0 4px;
+  background: var(--nd-bg);
+}
+
+.nd-appbar__title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.nd-appbar__title--center {
+  text-align: center;
+}
+
+.nd-iconbutton {
+  /* 48px: the tap-target floor, held to even though the glyph is 24px. */
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 24px;
+  background: transparent;
+  color: var(--nd-on-surface);
+}
+
+.nd-iconbutton:hover {
+  background: color-mix(in srgb, var(--nd-on-surface) 8%, transparent);
+}
+
+.nd-button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 22px;
+  background: var(--nd-primary);
+  color: var(--nd-on-primary);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+/* A full-height screen that scrolls its content: Rules and Progress. */
+.nd-subscreen {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--nd-bg);
+  color: var(--nd-on-surface);
+  padding-left: var(--nd-safe-left);
+  padding-right: var(--nd-safe-right);
+}
+
+@supports (height: 100dvh) {
+  .nd-subscreen {
+    height: 100dvh;
+  }
+}
+
+.nd-subscreen__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px var(--nd-page-pad) calc(32px + var(--nd-safe-bottom));
+}
+
+.nd-subscreen__inner {
+  max-width: 34rem;
+  margin-inline: auto;
+}

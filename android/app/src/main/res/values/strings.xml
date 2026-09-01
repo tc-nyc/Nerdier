@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nerdier</string>
+
+    <!-- Chrome -->
+    <string name="action_open_menu">Open menu</string>
+    <string name="action_open_progress">Open progress and statistics</string>
+    <string name="action_back">Back</string>
+    <string name="drawer_heading">Nerdier</string>
+    <string name="drawer_subheading">Guess the equation in six tries</string>
+    <string name="drawer_new_game">New Game</string>
+    <string name="drawer_rules">How to Play</string>
+
+    <!-- Game board -->
+    <string name="board_description">Guess board, six rows of eight tiles</string>
+    <string name="game_won">Solved in %1$d of 6 guesses.</string>
+    <string name="game_lost">Out of guesses. The equation was %1$s.</string>
+    <string name="game_play_again">Play again</string>
+    <string name="game_guesses_remaining">Guess %1$d of 6</string>
+
+    <!-- Rules -->
+    <string name="rules_title">How to Play</string>
+    <string name="rules_intro">Guess the hidden equation in six tries. Every guess must itself be a true equation.</string>
+
+    <string name="rules_h_format">The format</string>
+    <string name="rules_format_1">Every equation is exactly 8 tiles long.</string>
+    <string name="rules_format_2">It contains exactly one equals sign.</string>
+    <string name="rules_format_3">Operators (plus, minus, times, divide) appear only to the left of the equals sign.</string>
+    <string name="rules_format_4">The answer on the right is a whole number of 1 to 3 digits.</string>
+    <string name="rules_format_5">No leading zeros. 05+3=08 is not a valid equation.</string>
+
+    <string name="rules_h_maths">The maths</string>
+    <string name="rules_maths_1">Standard order of operations applies. Multiplication and division resolve before addition and subtraction, so 2+3*4=14, not 20.</string>
+    <string name="rules_maths_2">Division must come out whole. 7/2 is rejected.</string>
+    <string name="rules_maths_3">Nothing may go negative, including intermediate steps. 5-8+4=1 is rejected, because 5-8 dips below zero on the way.</string>
+
+    <string name="rules_h_colours">The colours</string>
+    <string name="rules_colour_green">Green: right character, right position.</string>
+    <string name="rules_colour_purple">Purple: that character is in the equation, but not in that spot.</string>
+    <string name="rules_colour_black">Black: that character is not in the equation at all, or every copy of it is already accounted for by a green or purple tile elsewhere in the row.</string>
+    <string name="rules_colour_note">Repeats follow the Wordle rule. If the answer holds one 3 and you play two, only one of yours gets coloured.</string>
+
+    <string name="rules_h_winning">Winning</string>
+    <string name="rules_winning_1">A commutative reordering still wins. If the hidden equation is 3+5=8 and you guess 5+3=8, that is a win. Your tiles may not all be green, and you win anyway.</string>
+    <string name="rules_winning_1b">Only addition and multiplication reorder freely. Subtraction and division depend on order, so 8-3=5 is not the same guess as 3-8=5.</string>
+    <string name="rules_winning_2">An invalid guess does not cost you a row. The row shakes, an explanation appears above the board, and your tiles stay put so you can edit and resubmit.</string>
+
+    <!-- Progress -->
+    <string name="progress_title">Progress</string>
+    <string name="progress_today">Today</string>
+    <string name="progress_this_week">This Week</string>
+    <string name="progress_this_month">This Month</string>
+    <string name="progress_empty">No games played in this period yet.</string>
+    <string name="stat_played">Played</string>
+    <string name="stat_won">Won</string>
+    <string name="stat_win_rate">Win rate</string>
+    <string name="stat_streak">Streak</string>
+    <string name="progress_distribution">Guess distribution</string>
+</resources>

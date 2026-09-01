@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Dark-mode counterpart of values/themes.xml. Without this the platform paints a
+  light window for the frame or two before Compose draws, which reads as a white
+  flash on launch for dark-mode users.
+-->
+<resources>
+    <style name="Theme.Nerdier" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/nerdier_window_background_dark</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

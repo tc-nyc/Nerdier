@@ -1,0 +1,282 @@
+/* ---------------------------------------------------------------------------
+ * Nerdier — global tokens and page shell.
+ *
+ * Ported 1:1 from the Android build's ui/theme/Color.kt. Dynamic / system
+ * accent colour is deliberately NOT used: green, purple and black carry game
+ * meaning, so every value here is a literal and is identical on every device.
+ *
+ * Owned by the game designer. Imported once, from main.tsx.
+ * ------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light dark;
+
+  /* --- Brand / chrome ---------------------------------------------------- */
+  --nd-primary: #3f4ea8;
+  --nd-on-primary: #ffffff;
+  --nd-primary-container: #e1e3fa;
+  --nd-on-primary-container: #1a1c1f;
+
+  --nd-bg: #fafafc;
+  --nd-surface: #ffffff;
+  --nd-surface-variant: #e6e7ec;
+  --nd-on-surface: #1a1c1f;
+  --nd-on-surface-variant: #44474e;
+  --nd-outline: #757780;
+
+  --nd-error: #b3261e;
+  --nd-on-error: #ffffff;
+  --nd-error-container: #f9dedc;
+  --nd-on-error-container: #410e0b;
+
+  /* --- Tile semantics ----------------------------------------------------
+   * Light theme: filled tiles are dark enough that white glyphs clear 4.5:1. */
+  --nd-correct: #2e7d32;
+  --nd-on-correct: #ffffff;
+  --nd-correct-border: #2e7d32;
+
+  --nd-present: #6c3fb0;
+  --nd-on-present: #ffffff;
+  --nd-present-border: #6c3fb0;
+
+  --nd-absent: #2b2e33;
+  --nd-on-absent: #ffffff;
+  --nd-absent-border: #2b2e33;
+
+  /* Unused (never-typed) tiles are WHITE in both themes; a typed-but-unsubmitted
+   * tile is not "unused" and stays outline-only. The empty border is heavier
+   * than it used to be because a white tile on a near-white page has nothing
+   * else to draw the grid with: #8e939c on #ffffff is 3.09:1, clearing the 3:1
+   * floor for a meaningful non-text boundary. */
+  --nd-tile-empty-fill: #ffffff;
+  --nd-tile-empty-border: #8e939c;
+  --nd-tile-filled-border: #6e727a;
+
+  --nd-key-idle: #e6e7ec;
+  --nd-on-key-idle: #1a1c1f;
+
+  /* --- Untried keypad keys ----------------------------------------------
+   * A character key nobody has tried yet is WHITE in both themes, the same
+   * "still to do" language the board's empty tiles use. Scored keys keep
+   * green / purple / black; ENTER and DELETE are actions and are untouched.
+   *
+   * The border does all the work of separating a white key from a near-white
+   * page, so it is heavier than the old idle grey: #83888f is 3.57:1 on the
+   * key's own white and 3.42:1 on the page behind it, clearing the 3:1
+   * non-text floor on BOTH sides of the edge (the board's #8e939c manages
+   * 3.09:1 on white but only 2.96:1 on the page, and a keypad key has more
+   * page around it than a board tile does).
+   *
+   * Hover / active / strong-border are drawn ON white in both themes, so
+   * they are theme-independent and live outside the dark block. */
+  --nd-key-untried-fill: #ffffff;
+  --nd-key-untried-border: #83888f;
+  --nd-on-key-untried: #1a1c1f;
+  --nd-key-untried-hover: #f0f1f4;
+  --nd-key-untried-active: #e0e2e7;
+  --nd-key-untried-border-strong: #5f636b;
+
+  /* --- Caret -------------------------------------------------------------
+   * The caret must never be mistaken for a scored tile, so it is deliberately
+   * NOT green, purple, black or the indigo brand colour: it is a cyan that no
+   * game state uses. Same hue family in both themes, lightened for dark. */
+  --nd-cursor: #00658f;
+  --nd-cursor-soft: rgb(0 101 143 / 12%);
+  /* The caret drawn ON a white (empty) tile. The dark-theme --nd-cursor is a
+   * light cyan tuned against a near-black page and manages only 1.7:1 on white,
+   * so a white tile gets this darker cyan instead — same hue family, still no
+   * scoring meaning, 6.4:1 on #ffffff. Identical to --nd-cursor in light mode. */
+  --nd-cursor-on-tile: #00658f;
+  --nd-cursor-on-tile-soft: #d6ecf5;
+
+  /* --- Win animation -----------------------------------------------------
+   * Flame and confetti palette. No fully saturated red anywhere: the flames
+   * top out at a warm orange, and the confetti borrows the board's own hues. */
+  --nd-flame-core: #ffd166;
+  --nd-flame-mid: #ff9d2e;
+  --nd-flame-edge: #e2621b;
+  --nd-confetti-1: #2e7d32;
+  --nd-confetti-2: #6c3fb0;
+  --nd-confetti-3: #00658f;
+  --nd-confetti-4: #e8a020;
+  --nd-confetti-5: #c2569b;
+  /* The "Nerdiest" flash never reaches white or black; it is a soft slate wash
+   * at low alpha, pulsed slowly. See WinAnimation.css for the rate. */
+  --nd-flash-wash: 35 39 51;
+  --nd-flash-alpha: 0.28;
+
+  --nd-chart-bar: #2e7d32;
+  --nd-chart-bar-muted: #e6e7ec;
+
+  /* Month trend line. Points are small, so they get their own values rather
+   * than reusing the bar fill, which is tuned for large areas. */
+  --nd-chart-line: #3f4ea8;
+  --nd-chart-point-win: #2e7d32;
+  --nd-chart-point-loss: #b3261e;
+  --nd-chart-grid: #d3d5db;
+  --nd-chart-plot: #ffffff;
+
+  --nd-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+  --nd-focus: #3f4ea8;
+
+  /* --- Metrics -----------------------------------------------------------
+   * The board never assumes a fixed tile size; see TileGrid.css. */
+  --nd-tile-gap: clamp(3px, 1.1vw, 6px);
+  --nd-row-gap: clamp(3px, 1.1vw, 6px);
+  --nd-radius: 6px;
+  --nd-page-pad: clamp(8px, 3vw, 16px);
+
+  /* Notched phones in standalone PWA mode. */
+  --nd-safe-top: env(safe-area-inset-top, 0px);
+  --nd-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nd-safe-left: env(safe-area-inset-left, 0px);
+  --nd-safe-right: env(safe-area-inset-right, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --nd-primary: #b6beff;
+    --nd-on-primary: #262f6e;
+    --nd-primary-container: #262f6e;
+    --nd-on-primary-container: #e4e6ea;
+
+    --nd-bg: #111316;
+    --nd-surface: #181b1f;
+    --nd-surface-variant: #2a2e34;
+    --nd-on-surface: #e4e6ea;
+    --nd-on-surface-variant: #c2c6cd;
+    --nd-outline: #8a8f98;
+
+    --nd-error: #f2b8b5;
+    --nd-on-error: #601410;
+    --nd-error-container: #8c1d18;
+    --nd-on-error-container: #f9dedc;
+
+    /* Dark theme: fills stay dark enough for white glyphs, and every fill also
+     * gets a lighter border so it separates from the near-black page. The
+     * ABSENT border is deliberately the brightest of the three — a black tile
+     * on a black background is otherwise invisible. */
+    --nd-correct: #2e7d46;
+    --nd-on-correct: #ffffff;
+    --nd-correct-border: #5fbf83;
+
+    --nd-present: #6a3fb0;
+    --nd-on-present: #ffffff;
+    --nd-present-border: #b79ce8;
+
+    --nd-absent: #23262b;
+    --nd-on-absent: #e4e6ea;
+    --nd-absent-border: #6e747e;
+
+    /* White here too, as specified. Six rows of white on a near-black page is a
+     * lot of light, so the balance is carried by the gaps and the border: the
+     * 3.5px+ page-coloured gap between tiles already separates them, and this
+     * dark border (9:1 on white) draws a crisp edge so the block reads as a
+     * grid of cells rather than one white slab. A typed tile drops back to
+     * outline-only, so the white area shrinks as the row fills — the board gets
+     * calmer as the player works, which is the right direction. */
+    --nd-tile-empty-fill: #ffffff;
+    --nd-tile-empty-border: #3a3e45;
+    --nd-tile-filled-border: #8a8f98;
+
+    --nd-key-idle: #2a2e34;
+    --nd-on-key-idle: #e4e6ea;
+
+    /* White here too, as specified. The glyph is FLIPPED: the dark theme's
+     * light key ink (#e4e6ea) is 1.2:1 on white and would vanish, so an
+     * untried key keeps the dark ink — 17.08:1 on #ffffff.
+     * The border flips the other way for the same reason the board's empty
+     * tiles do: a white key needs a dark edge, not a light one, to read as a
+     * discrete control. #3a3e45 is 10.74:1 on white. Separation from the
+     * near-black page is already free (white on #111316 is 18.61:1); the
+     * border is there to draw the key's shape, not to find it. */
+    --nd-key-untried-fill: #ffffff;
+    --nd-key-untried-border: #3a3e45;
+    --nd-on-key-untried: #1a1c1f;
+
+    /* Cyan again, lifted to clear the near-black page at 4.5:1. */
+    --nd-cursor: #6fd3f7;
+    --nd-cursor-soft: rgb(111 211 247 / 16%);
+    /* NOT lifted for dark: this one is only ever drawn on a white tile. */
+    --nd-cursor-on-tile: #00658f;
+    --nd-cursor-on-tile-soft: #d6ecf5;
+
+    --nd-flame-core: #ffe08a;
+    --nd-flame-mid: #ffab45;
+    --nd-flame-edge: #e2621b;
+    --nd-confetti-1: #5fbf83;
+    --nd-confetti-2: #b79ce8;
+    --nd-confetti-3: #6fd3f7;
+    --nd-confetti-4: #f0bb52;
+    --nd-confetti-5: #e79ac8;
+    /* Dark theme washes *lighter*, and at a lower alpha still: the luminance
+     * step from a near-black page is the bigger one, so it gets the smaller
+     * amplitude. */
+    --nd-flash-wash: 226 231 240;
+    --nd-flash-alpha: 0.26;
+
+    --nd-chart-bar: #2e7d46;
+    --nd-chart-bar-muted: #2a2e34;
+
+    --nd-chart-line: #b6beff;
+    --nd-chart-point-win: #5fbf83;
+    --nd-chart-point-loss: #ff9d8f;
+    --nd-chart-grid: #3a3e45;
+    --nd-chart-plot: #181b1f;
+
+    --nd-shadow: 0 1px 2px rgb(0 0 0 / 45%);
+    --nd-focus: #b6beff;
+  }
+}
+
+/* --- Reset ---------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--nd-bg);
+  color: var(--nd-on-surface);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  /* The board screen is a fixed viewport; only the Rules and Progress screens
+   * scroll, and they opt in themselves. */
+  overscroll-behavior: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* One focus treatment everywhere, always visible in both themes. */
+:where(button, a, [tabindex]):focus-visible {
+  outline: 3px solid var(--nd-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.nd-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,0 +1,20 @@
+.DS_Store
+
+# --- web ---
+node_modules/
+web/dist/
+web/dev-dist/
+*.local
+
+# --- android (unmaintained; kept as reference implementation) ---
+*.iml
+.gradle/
+.kotlin/
+local.properties
+.idea/
+android/**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
