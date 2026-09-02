@@ -222,8 +222,23 @@ deployed, so the live site is untouched.
 
 **The Actions job fails with "deployment_token was not provided"**
 
-The GitHub secret is missing or misnamed. It must be spelled exactly
-`AZURE_STATIC_WEB_APPS_API_TOKEN`. Redo Step 3.
+The GitHub secret is missing, misnamed, or in the wrong place. GitHub silently
+substitutes an empty string for a secret it can't find, so the run gets all the
+way to the deploy step before failing. A tell: the runner log's `with:` block
+lists `repo_token` but no `azure_static_web_apps_api_token` at all.
+
+Three causes, in order of likelihood:
+
+1. **It's an Environment secret rather than a Repository secret.** This workflow
+   declares no `environment:` key, so environment-scoped secrets are invisible
+   to it. It must live under *Settings → Secrets and variables → Actions →
+   **Repository secrets***.
+2. **It's under the Variables tab, not Secrets.** They sit side by side.
+3. **The name doesn't match exactly.** It is case-sensitive:
+   `AZURE_STATIC_WEB_APPS_API_TOKEN`.
+
+Fix it, then use **Re-run failed jobs** on the existing run — you don't need to
+push a new commit.
 
 **The site loads but shows a blank page**
 

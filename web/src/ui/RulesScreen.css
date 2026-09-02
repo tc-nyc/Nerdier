@@ -42,3 +42,11 @@
   --nd-tile-size: 44px;
   flex: 0 0 auto;
 }
+
+/* The easter-egg activator sits in the Winning list but is a control, not a
+ * point being made, so it loses the marker and hangs at the same indent as the
+ * bullet text above it. */
+.nd-rules__egg {
+  list-style: none;
+  margin: 0;
+}

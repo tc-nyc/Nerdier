@@ -105,6 +105,14 @@
   --nd-flash-wash: 35 39 51;
   --nd-flash-alpha: 0.28;
 
+  /* --- Kathryn easter egg -----------------------------------------------
+   * The wash behind the "verification failed" card. It fades in once and out
+   * once across the whole three seconds — it never pulses — so it is not a
+   * flash at any rate. Deliberately a neutral slate, not a red tint: the card
+   * itself carries the error colour and a full-screen red would be alarming
+   * out of all proportion to a joke. */
+  --nd-egg-wash: rgb(35 39 51 / 22%);
+
   --nd-chart-bar: #2e7d32;
   --nd-chart-bar-muted: #e6e7ec;
 
@@ -214,6 +222,10 @@
      * amplitude. */
     --nd-flash-wash: 226 231 240;
     --nd-flash-alpha: 0.26;
+
+    /* Dark theme darkens rather than lightens: the card is already a light
+     * error container and needs the page to fall away behind it, not rise. */
+    --nd-egg-wash: rgb(6 7 9 / 46%);
 
     --nd-chart-bar: #2e7d46;
     --nd-chart-bar-muted: #2a2e34;

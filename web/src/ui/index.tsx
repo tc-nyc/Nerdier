@@ -15,6 +15,11 @@ export {
   WIN_ANIMATION_REDUCED_MS,
 } from './WinAnimation'
 export type { WinAnimationProps, WinAnimationVariant } from './WinAnimation'
+export { KathrynEasterEgg, VerificationFailedAnimation, KATHRYN_ANIMATION_MS } from './KathrynEasterEgg'
+export type {
+  KathrynEasterEggProps,
+  VerificationFailedAnimationProps,
+} from './KathrynEasterEgg'
 export { Keypad } from './Keypad'
 export type { KeypadProps } from './Keypad'
 export { ErrorBanner } from './ErrorBanner'

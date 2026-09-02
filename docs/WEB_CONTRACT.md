@@ -196,3 +196,36 @@ keypad.
 - Re-check `:focus-visible` and any hover/active state against white.
 - The disabled look for ENTER must remain distinguishable from a white
   character key.
+
+---
+
+# Addendum 4 — the Kathryn easter egg (principal's request)
+
+A joke, in the **How to Play** screen's *Winning* section.
+
+1. A new bullet, in the same voice as its neighbours, reading essentially:
+   **"If Kathryn starts drinking coffee, she wins the game."**
+2. Immediately after it, an activator labelled **"Kathryn drank coffee"**.
+3. Activating it plays a short full-screen animation reading
+   **"Verification failed, Kathryn doesn't drink coffee"** — the joke being that
+   the claim is rejected.
+
+## Requirements
+
+- **It is a `<button>`, not an `<a>`.** It performs an action and navigates
+  nowhere. Style it to look like a link if that reads better, but an anchor with
+  no `href` is not keyboard operable and an `href="#"` would be a lie. This is
+  the sort of thing that quietly breaks screen-reader and keyboard use.
+- Reuse the existing `WinAnimation` conventions: full-screen layer, pointer
+  events off so it never traps input, tap or key anywhere to dismiss early, and
+  a self-clearing timer. **~3 seconds** feels right for a one-line gag; the win
+  celebration's 5s is too long to sit through repeatedly.
+- Read as a *failed verification* rather than a celebration — the error palette,
+  not the green/purple game colours. No flashing (see the photosensitivity note
+  in Addendum 3; that constraint stands for every animation in this app).
+- Fully disabled under `prefers-reduced-motion: reduce`: show the message
+  statically for the same duration, with no motion.
+- Announce the message politely to assistive tech, and make it repeatable —
+  pressing the button twice must play it twice, so key any effect on a nonce
+  rather than on the message text.
+- The Rules screen must remain scrollable and usable while it plays.

@@ -1,5 +1,6 @@
 import { GuessTile } from './TileGrid'
 import { BackIcon } from './Icons'
+import { KathrynEasterEgg } from './KathrynEasterEgg'
 import { strings } from './strings'
 import './Chrome.css'
 import './RulesScreen.css'
@@ -74,6 +75,13 @@ export function RulesScreen({ onBack }: RulesScreenProps) {
             {strings.rulesWinning.map((line) => (
               <li key={line}>{line}</li>
             ))}
+            <li>{strings.rulesWinningKathryn}</li>
+            {/* Owns only its own "is the gag on screen" state; no game state
+                is touched, and the layer it raises is pointer-events: none, so
+                this screen keeps scrolling while it plays. */}
+            <li className="nd-rules__egg">
+              <KathrynEasterEgg />
+            </li>
           </ul>
         </div>
       </div>

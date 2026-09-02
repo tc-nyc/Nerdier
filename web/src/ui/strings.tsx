@@ -63,6 +63,13 @@ export const strings = {
     'An invalid guess does not cost you a row. The row shakes, an explanation appears above the board, and your tiles stay put so you can edit and resubmit.',
   ],
 
+  /* The Kathryn easter egg, in the Winning section. The bullet keeps the
+   * section's voice; the button under it makes the claim, and the app rejects
+   * it. Wording is the principal's, verbatim. */
+  rulesWinningKathryn: 'If Kathryn starts drinking coffee, she wins the game.',
+  rulesKathrynActivator: 'Kathryn drank coffee',
+  rulesKathrynFailure: "Verification failed, Kathryn doesn't drink coffee",
+
   /* Progress */
   progressTitle: 'Progress',
   progressToday: 'Today',
