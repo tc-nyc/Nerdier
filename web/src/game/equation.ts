@@ -19,6 +19,17 @@
  * 6. No leading zeros on a multi-digit number; a bare `0` is a legal operand.
  * 7. The left-hand side contains at least one operator.
  * 8. No adjacent operators, and no operator at either end.
+ * 9. No multiplication may have zero as an operand — `0*7`, `7*0` and any
+ *    `*0`/`0*` inside a longer expression are illegal.
+ * 10. No division may have zero as its dividend — `0/1234` is illegal, as is
+ *    any division whose left operand works out to zero, such as the second
+ *    `/` of `0/6/2`. Dividing *by* zero was already illegal and keeps its own
+ *    more specific message.
+ *
+ * Rules 9 and 10 are both read by operand **value**, not by written character,
+ * and both are deliberately narrow: zero is still a fine operand elsewhere, so
+ * `0+5`, `5-0` and `10-0-4` stay legal, and a `0` that is merely a digit of a
+ * longer number (the `40` of `9*40`) was never in scope.
  *
  * Nothing in this file throws. Every failure comes back as a value.
  */
@@ -183,6 +194,91 @@ function evalTokens(tokens: Tokens): EvalResult {
   return { ok: true, value: total }
 }
 
+/**
+ * True when any multiplication in [tokens] has zero as an operand — `0*7`, `7*0`,
+ * the `92*0` inside `4+92*0`, and also a zero arrived at by an earlier step of
+ * the same term, as in `0/1*10`. Operands are compared by value, so a written
+ * `0` that is merely part of a longer number (the `10` of `10*2`) is untouched.
+ *
+ * This is a puzzle rule, not an arithmetic one: it is enforced by
+ * {@link validateEquation}, while {@link evaluateExpression} still works `0*7`
+ * out to 0. The scan mirrors the multiplicative pass of {@link evalTokens} and
+ * gives up quietly — returning false — on input that pass would reject anyway
+ * (division by zero, inexact division, out-of-range products), so those keep
+ * their own more specific messages.
+ */
+function multipliesByZero(tokens: Tokens): boolean {
+  const { numbers, ops } = tokens
+  const first = numbers[0]
+  if (first === undefined) return false
+  let term: number = first
+
+  for (let idx = 0; idx < ops.length; idx++) {
+    const op = ops[idx]
+    const next = numbers[idx + 1]
+    if (op === undefined || next === undefined) return false
+
+    if (op === '*') {
+      if (term === 0 || next === 0) return true
+      const product = term * next
+      if (!Number.isSafeInteger(product)) return false
+      term = product
+    } else if (op === '/') {
+      if (next === 0 || term % next !== 0) return false
+      term = term / next
+    } else {
+      // `+` and `-` start a fresh multiplicative term; nothing carries across.
+      term = next
+    }
+  }
+  return false
+}
+
+/**
+ * True when any division in [tokens] has zero as its dividend — the `0/1234` of
+ * `0/1234=0`, the second `/` of `0/6/2` where the zero is arrived at rather than
+ * written, and a zero that reaches a division through an earlier `+` or `-` term
+ * boundary, as in `5-5+0/8`. Operands are compared by value, so a written `0`
+ * that is merely part of a longer number (the `10` of `10/2`) is untouched.
+ *
+ * Dividing **by** zero is a different, older rule: this scan returns false the
+ * moment it meets a zero divisor — including for `0/0` — so that
+ * {@link evalTokens} can reject it with the more specific "Can't divide by zero".
+ *
+ * Like {@link multipliesByZero} this is a puzzle rule rather than an arithmetic
+ * one: {@link evaluateExpression} still works `0/6` out to 0, and the scan gives
+ * up quietly on input {@link evalTokens} would reject anyway, so those keep their
+ * own messages.
+ */
+function dividesZero(tokens: Tokens): boolean {
+  const { numbers, ops } = tokens
+  const first = numbers[0]
+  if (first === undefined) return false
+  let term: number = first
+
+  for (let idx = 0; idx < ops.length; idx++) {
+    const op = ops[idx]
+    const next = numbers[idx + 1]
+    if (op === undefined || next === undefined) return false
+
+    if (op === '/') {
+      // Divisor first: a zero divisor is somebody else's, more specific, error.
+      if (next === 0) return false
+      if (term === 0) return true
+      if (term % next !== 0) return false
+      term = term / next
+    } else if (op === '*') {
+      const product = term * next
+      if (!Number.isSafeInteger(product)) return false
+      term = product
+    } else {
+      // `+` and `-` start a fresh multiplicative term; nothing carries across.
+      term = next
+    }
+  }
+  return false
+}
+
 /** Tokenises then evaluates [expr]; the reason on failure is the first rule it breaks. */
 function evalDetailed(expr: string): EvalResult {
   const t = tokenize(expr)
@@ -269,6 +365,7 @@ function render(node: ExprNode): string {
  * Returns `{ ok: true }` if [guess] is a legal Nerdier equation, or
  * `{ ok: false, reason }` whose reason names the specific rule broken — e.g.
  * `"Needs exactly one = sign"`, `"7/2 isn't a whole number"`,
+ * `"No multiplying by zero"`, `"No dividing zero"`,
  * `"51+21=42 — the left side equals 72"`. The reason is shown to the player
  * verbatim, so it is always concrete.
  */
@@ -312,6 +409,10 @@ export function validateEquation(guess: string): ValidationResult {
 
   const t = tokenize(lhs)
   if (!t.ok) return invalid(t.reason)
+  // Order matters only for the doubly-illegal `0/1*10=0`, where the zero
+  // reaches a `*`: multiplication is reported there, as it was before this rule.
+  if (multipliesByZero(t.tokens)) return invalid('No multiplying by zero')
+  if (dividesZero(t.tokens)) return invalid('No dividing zero')
   const e = evalTokens(t.tokens)
   if (!e.ok) return invalid(e.reason)
 
@@ -326,8 +427,10 @@ export function validateEquation(guess: string): ValidationResult {
  * characters, malformed operator placement, a leading zero, division by zero,
  * inexact division, or a negative intermediate result. Never throws.
  *
- * A bare number evaluates to itself; the "needs an operator" rule is a puzzle
- * rule enforced by {@link validateEquation}, not an arithmetic one.
+ * A bare number evaluates to itself. The "needs an operator", "no multiplying
+ * by zero" and "no dividing zero" rules are puzzle rules enforced by
+ * {@link validateEquation}, not arithmetic ones, so `0*7` and `0/6` both still
+ * evaluate to 0.
  */
 export function evaluateExpression(expr: string): number | null {
   const r = evalDetailed(expr)
@@ -398,8 +501,13 @@ function invalid(reason: string): ValidationResult {
 /**
  * The digit count of each left-hand operand in order — so `digits.length - 1` is
  * the operator count — the required answer length, and the relative chance of
- * drawing this shape. Weights are tuned so that 1-, 2- and 3-digit answers come
- * out roughly equally often even though the shapes have wildly different hit rates.
+ * drawing this shape. Weights compensate for the shapes' wildly different hit
+ * rates: they were tuned for a roughly even split of 1-, 2- and 3-digit answers,
+ * but both zero rules fell almost entirely on the one-digit-answer shapes, so
+ * the observed split has drifted from 33 / 33 / 33 to 17 / 41 / 41 (after
+ * no-multiplying-by-zero) and now to about 12 / 44 / 44. Every shape below still
+ * has solutions; retuning the weights is a game-design call, not a correctness
+ * one, so the numbers are left as they were.
  */
 interface Shape {
   readonly digits: readonly number[]
@@ -412,29 +520,51 @@ interface Shape {
  *
  * With `L` left-hand characters, `k` operators need `k + 1` operands, so
  * `2k + 1 <= L <= 6`: an eight-tile equation can never hold more than two
- * operators on the left, and no left-hand operand can exceed three digits.
- * Two further shapes — operands of 2 then 3 digits with a 1-digit answer, and
- * 1 then 3 digits with a 2-digit answer — are omitted because exhaustive search
- * shows no equation of either shape can satisfy the rules.
+ * operators on the left. That leaves thirteen candidate shapes, four of which
+ * exhaustive search shows are empty and which are therefore omitted here:
+ * 2 then 3 digits with a 1-digit answer, 1 then 3 digits with a 2-digit answer,
+ * and both four-digit shapes — `NNNN op N` emptied by the no-multiplying-by-zero
+ * rule (only `1234*0=0` forms had ever qualified) and `N op NNNN` emptied by the
+ * no-dividing-zero rule (its 9,000 survivors were all `0/1234=0`, which was
+ * exactly the 27% of the space the principal wanted gone). So it is now true,
+ * rather than merely convenient, that no left-hand operand exceeds three digits.
+ *
+ * Solution counts per shape, under both zero rules, are noted below and total
+ * 17,960 — exhaustive enumeration of the whole eight-tile space, down from
+ * 31,370 before the no-dividing-zero rule and 65,374 before either. None of the
+ * nine shapes the generator draws from is empty.
  */
 const SHAPES: readonly Shape[] = [
-  { digits: [3, 2], rhsDigits: 1, weight: 148 }, // e.g. 126/14=9   (needs cancellation; rare)
-  { digits: [1, 1, 2], rhsDigits: 1, weight: 15 }, // e.g. 9*8-64=8
-  { digits: [1, 2, 1], rhsDigits: 1, weight: 16 }, // e.g. 48/6-3=5
-  { digits: [2, 1, 1], rhsDigits: 1, weight: 18 }, // e.g. 12/4+6=9
-  { digits: [2, 2], rhsDigits: 2, weight: 7 }, // e.g. 10+25=35
-  { digits: [3, 1], rhsDigits: 2, weight: 27 }, // e.g. 126/9=14
-  { digits: [1, 1, 1], rhsDigits: 2, weight: 6 }, // e.g. 5*4-8=12
-  { digits: [1, 2], rhsDigits: 3, weight: 9 }, // e.g. 9*45=405
-  { digits: [2, 1], rhsDigits: 3, weight: 9 }, // e.g. 23*8=184
+  { digits: [3, 2], rhsDigits: 1, weight: 148 }, // 659 solutions (unchanged); e.g. 126/14=9 (needs cancellation; rare)
+  { digits: [1, 1, 2], rhsDigits: 1, weight: 15 }, // 783 solutions (was 3393); e.g. 9*8-64=8
+  { digits: [1, 2, 1], rhsDigits: 1, weight: 16 }, // 813 solutions (was 2613); e.g. 48/6-3=5
+  { digits: [2, 1, 1], rhsDigits: 1, weight: 18 }, // 3496 solutions (unchanged); e.g. 12/4+6=9
+  { digits: [2, 2], rhsDigits: 2, weight: 7 }, // 6480 solutions (unchanged); e.g. 10+25=35
+  { digits: [3, 1], rhsDigits: 2, weight: 27 }, // 659 solutions (unchanged); e.g. 126/9=14
+  { digits: [1, 1, 1], rhsDigits: 2, weight: 6 }, // 3752 solutions (unchanged); e.g. 5*4-8=12
+  { digits: [1, 2], rhsDigits: 3, weight: 9 }, // 659 solutions (unchanged); e.g. 9*45=405
+  { digits: [2, 1], rhsDigits: 3, weight: 9 }, // 659 solutions (unchanged); e.g. 23*8=184
 ]
 
 const TOTAL_WEIGHT = SHAPES.reduce((sum, s) => sum + s.weight, 0)
 
-/** Draws needed per success average around 26; the cap is pure insurance. */
+/**
+ * Draws needed per success now average 34.0 — 26 originally, 32.0 after
+ * no-multiplying-by-zero. Attempts are geometric (one draw in 34.0 succeeds);
+ * measured over 200,000 generated puzzles the median was 24, the 99th percentile
+ * 154, the 99.9th 231 and the worst case 386. The 4000 cap is therefore still
+ * pure insurance: the chance of 4000 consecutive misses is about 1e-52, and the
+ * fallback table below has never been reached outside the degenerate-rng test.
+ */
 const MAX_ATTEMPTS = 4000
 
-/** Hand-checked valid equations covering every answer length and operator. */
+/**
+ * Hand-checked valid equations covering every answer length and operator, used
+ * only if rejection sampling somehow exhausts {@link MAX_ATTEMPTS}. All twelve
+ * survive both zero rules: none multiplies by zero and none divides a zero — the
+ * `0` in `10+25=35` is a digit of `10`, not an operand — and `equation.test.ts`
+ * re-validates every entry so the list cannot rot.
+ */
 const FALLBACKS: readonly string[] = [
   '9*8-64=8',
   '48/6-3=5',

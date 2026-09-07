@@ -294,6 +294,9 @@
 /* A solid card, so the words stay legible through both halves of the pulse. */
 .nd-win__word {
   padding: 14px 22px;
+  /* The iPhone wording is nearly twice as long as the default; let it wrap
+   * inside the card rather than run off the side of a narrow phone. */
+  max-width: 100%;
   border-radius: 16px;
   background: var(--nd-surface);
   color: var(--nd-on-surface);

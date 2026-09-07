@@ -13,6 +13,7 @@ import {
   WIN_ANIMATION_VARIANTS,
   randomWinVariant,
 } from './WinAnimation'
+import { strings } from './strings'
 
 afterEach(() => {
   cleanup()
@@ -87,6 +88,45 @@ describe('WinAnimation', () => {
     const { container } = render(<WinAnimation variant="flames" onDone={vi.fn()} />)
     const root = container.querySelector('.nd-win')
     expect(root?.getAttribute('aria-hidden')).toBe('true')
+  })
+
+  it('shows the standard wordmark off an iPhone', () => {
+    const { container } = render(
+      <WinAnimation variant="nerdiest" onDone={vi.fn()} isIPhone={false} />,
+    )
+    expect(container.querySelector('.nd-win__word')?.textContent).toBe(strings.winWordmark)
+  })
+
+  it('shows the iPhone wordmark on an iPhone', () => {
+    const { container } = render(
+      <WinAnimation variant="nerdiest" onDone={vi.fn()} isIPhone={true} />,
+    )
+    expect(container.querySelector('.nd-win__word')?.textContent).toBe(
+      strings.winWordmarkIPhone,
+    )
+    expect(strings.winWordmarkIPhone).toBe('Kathryn won, without drinking coffee!')
+  })
+
+  it('keeps the other four variants on the standard wordmark, iPhone or not', () => {
+    // Every variant renders the wordmark — CSS shows it for the other four
+    // under prefers-reduced-motion — so the joke has to be gated on `nerdiest`
+    // here, not left to the stylesheet.
+    for (const variant of WIN_ANIMATION_VARIANTS.filter((v) => v !== 'nerdiest')) {
+      const { container, unmount } = render(
+        <WinAnimation variant={variant} onDone={vi.fn()} isIPhone={true} />,
+      )
+      expect(container.querySelector('.nd-win__word')?.textContent, variant).toBe(
+        strings.winWordmark,
+      )
+      unmount()
+    }
+  })
+
+  it('defaults the platform check to the running environment, which is not an iPhone', () => {
+    // jsdom's user agent says "jsdom", so the default path must fall through to
+    // the standard wording without any override.
+    const { container } = render(<WinAnimation variant="nerdiest" onDone={vi.fn()} />)
+    expect(container.querySelector('.nd-win__word')?.textContent).toBe(strings.winWordmark)
   })
 
   it('parks its effect layer over the winning row', () => {

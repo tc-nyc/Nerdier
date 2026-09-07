@@ -251,6 +251,85 @@ describe('useGame — free cursor', () => {
     expect(result.current.state.cursor).toBe(0)
   })
 
+  it('clears the caret tile in place via the on-screen DELETE, then retypes there', () => {
+    const { result } = renderHook(() => useGame({ rules: stubRules([]), store }))
+
+    type(result, '12+34=46')
+    act(() => { result.current.onMoveCursor(3) })
+    expect(result.current.state.canDelete).toBe(true)
+
+    act(() => { result.current.onDeleteAtCursorOrBackspace() })
+    expect(pattern(result.current.state), 'neighbours untouched').toBe('12+_4=46')
+    expect(result.current.state.cursor, 'the caret stays put').toBe(3)
+
+    type(result, '9')
+    expect(pattern(result.current.state)).toBe('12+94=46')
+  })
+
+  it('backspaces via the on-screen DELETE when the caret tile is empty', () => {
+    const { result } = renderHook(() => useGame({ rules: stubRules([]), store }))
+
+    type(result, '12+34=46')
+    act(() => { result.current.onMoveCursor(3); result.current.onDeleteAtCursorOrBackspace() })
+    act(() => { result.current.onDeleteAtCursorOrBackspace() })
+
+    expect(pattern(result.current.state)).toBe('12__4=46')
+    expect(result.current.state.cursor).toBe(2)
+  })
+
+  it('empties the row under repeated on-screen DELETE presses, then reports disabled', () => {
+    const { result } = renderHook(() => useGame({ rules: stubRules([]), store }))
+
+    type(result, '12+34=46')
+
+    for (let i = 0; i < 8; i++) {
+      expect(result.current.state.canDelete, `press ${i + 1} is enabled`).toBe(true)
+      act(() => { result.current.onDeleteAtCursorOrBackspace() })
+    }
+
+    expect(pattern(result.current.state)).toBe('________')
+    expect(result.current.state.cursor).toBe(0)
+    expect(result.current.state.canDelete, 'nothing left to delete').toBe(false)
+
+    // And a further press is a no-op rather than a crash.
+    act(() => { result.current.onDeleteAtCursorOrBackspace() })
+    expect(pattern(result.current.state)).toBe('________')
+  })
+
+  it('reports canDelete from the caret, not from how full the row is', () => {
+    const { result } = renderHook(() => useGame({ rules: stubRules([]), store }))
+
+    // Empty row, caret at 0: both branches are no-ops.
+    expect(result.current.state.canDelete).toBe(false)
+
+    // Characters only to the RIGHT of a caret parked at 0: still nothing to do,
+    // even though filledCount is 2.
+    act(() => { result.current.onMoveCursor(4) })
+    type(result, '99')
+    act(() => { result.current.onMoveCursor(0) })
+    expect(result.current.state.filledCount).toBe(2)
+    expect(result.current.state.canDelete).toBe(false)
+
+    // Tile 0 filled, caret at 0: enabled, and it clears in place.
+    type(result, '7')
+    act(() => { result.current.onMoveCursor(0) })
+    expect(result.current.state.canDelete).toBe(true)
+    act(() => { result.current.onDeleteAtCursorOrBackspace() })
+    expect(pattern(result.current.state)).toBe('____99__')
+    expect(result.current.state.cursor).toBe(0)
+  })
+
+  it('turns canDelete off once the game is over', () => {
+    const { result } = renderHook(() => useGame({ rules: stubRules(['12+34=46']), store }))
+
+    type(result, '12+34=46')
+    expect(result.current.state.canDelete).toBe(true)
+
+    act(() => { result.current.onSubmit() })
+    expect(result.current.state.status).toBe('won')
+    expect(result.current.state.canDelete).toBe(false)
+  })
+
   it('clamps the arrow keys at both ends', () => {
     const { result } = renderHook(() => useGame({ rules: stubRules([]), store }))
 

@@ -41,6 +41,12 @@ export interface GameScreenProps {
   /** Forward delete — clears the tile at the caret. Wire to `onDeleteAtCursor`. */
   readonly onDeleteAtCursor?: () => void
   /**
+   * What the on-screen DELETE button does: clear the caret's tile if it holds
+   * a character, otherwise backspace. Passed straight to {@link Keypad}, which
+   * falls back to `onDeleteAtCursor` then `onDelete` when it is absent.
+   */
+  readonly onDeleteAtSelection?: () => void
+  /**
    * Move the caret to an absolute position. Fired by tapping a tile in the
    * active row and by the left/right arrow keys.
    */
@@ -59,6 +65,8 @@ export interface GameScreenProps {
   /** Overrides the derived value; pass the hook's own flag when you have it. */
   readonly canSubmit?: boolean
   readonly canDelete?: boolean
+  /** Enables the on-screen DELETE button; defaults to `canDelete`'s value. */
+  readonly canDeleteAtSelection?: boolean
 }
 
 /** How long a validator message stays up before `onErrorShown` fires. */
@@ -80,6 +88,7 @@ export function GameScreen({
   onKeyPress,
   onDelete,
   onDeleteAtCursor,
+  onDeleteAtSelection,
   onCursorMove,
   onSubmit,
   onNewGame,
@@ -89,6 +98,7 @@ export function GameScreen({
   currentRow,
   canSubmit,
   canDelete,
+  canDeleteAtSelection,
 }: GameScreenProps) {
   // The only state this screen owns is presentational.
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -227,6 +237,8 @@ export function GameScreen({
             onKeyPress={onKeyPress}
             onDelete={onDelete}
             {...(onDeleteAtCursor === undefined ? {} : { onDeleteAtCursor })}
+            {...(onDeleteAtSelection === undefined ? {} : { onDeleteAtSelection })}
+            {...(canDeleteAtSelection === undefined ? {} : { canDeleteAtSelection })}
             onArrow={(direction) => {
               moveCaret(direction === 'left' ? caret - 1 : caret + 1)
             }}

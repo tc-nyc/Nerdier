@@ -45,6 +45,17 @@ export interface KeypadProps {
    */
   readonly onDeleteAtCursor?: () => void
   /**
+   * What the on-screen DELETE button does: clear the tile the caret is *on*,
+   * leaving the caret put so the player can type a replacement, and fall back
+   * to a backspace when that tile is already empty. That hybrid lives in the
+   * engine, not here — this is just the handler for it.
+   *
+   * Omit it and the button falls back to `onDeleteAtCursor`, then to
+   * `onDelete`. The physical Backspace key is deliberately unaffected either
+   * way: backspace means "delete backwards" on every keyboard on earth.
+   */
+  readonly onDeleteAtSelection?: () => void
+  /**
    * ArrowLeft / ArrowRight on a physical keyboard. Omit it and the arrows are
    * left to the browser.
    */
@@ -52,7 +63,15 @@ export interface KeypadProps {
   readonly onSubmit: () => void
   /** False once all eight tiles are not yet filled, or the game is over. */
   readonly canSubmit?: boolean
+  /** Enables the physical Backspace / Delete keys. */
   readonly canDelete?: boolean
+  /**
+   * Enables the on-screen DELETE button, whose reach is wider than
+   * `canDelete`'s: it is live whenever *either* branch of the hybrid would do
+   * something — the caret's tile is filled, or there is something to its left.
+   * Falls back to `canDelete` when not supplied.
+   */
+  readonly canDeleteAtSelection?: boolean
   /** False when the game is over: the pad greys out but stays readable. */
   readonly enabled?: boolean
   /**
@@ -67,10 +86,12 @@ export function Keypad({
   onKeyPress,
   onDelete,
   onDeleteAtCursor,
+  onDeleteAtSelection,
   onArrow,
   onSubmit,
   canSubmit = true,
   canDelete = true,
+  canDeleteAtSelection,
   enabled = true,
   keyboardEnabled = true,
 }: KeypadProps) {
@@ -150,6 +171,11 @@ export function Keypad({
     onSubmit,
   ])
 
+  // The on-screen button and the physical keys have diverged on purpose: the
+  // button clears the selected tile, Backspace still deletes backwards.
+  const deleteButton = onDeleteAtSelection ?? onDeleteAtCursor ?? onDelete
+  const deleteButtonEnabled = canDeleteAtSelection ?? canDelete
+
   return (
     <div className="nd-keypad" aria-label="Keypad" role="group">
       {CHAR_ROWS.map((keys, rowIndex) => (
@@ -176,9 +202,9 @@ export function Keypad({
         <button
           type="button"
           className="nd-key nd-key--action nd-key--delete"
-          aria-label="Delete, clears the character before the cursor"
-          disabled={!enabled || !canDelete}
-          onClick={onDelete}
+          aria-label="Delete, clears the selected tile"
+          disabled={!enabled || !deleteButtonEnabled}
+          onClick={deleteButton}
         >
           <span aria-hidden="true">DELETE</span>
         </button>

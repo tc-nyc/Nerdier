@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
+import { isIPhoneDevice } from './platform'
+import { strings } from './strings'
 import './WinAnimation.css'
 
 /**
@@ -90,9 +92,21 @@ export interface WinAnimationProps {
   readonly rowIndex?: number
   /** Overrides the run time. Previews use it; the game does not. */
   readonly durationMs?: number
+  /**
+   * Override for the platform check behind the `nerdiest` wordmark. Left alone
+   * it asks {@link isIPhoneDevice}; tests and previews pass it explicitly so
+   * both wordings are reachable without faking a global user agent.
+   */
+  readonly isIPhone?: boolean
 }
 
-export function WinAnimation({ variant, onDone, rowIndex = 0, durationMs }: WinAnimationProps) {
+export function WinAnimation({
+  variant,
+  onDone,
+  rowIndex = 0,
+  durationMs,
+  isIPhone = isIPhoneDevice(),
+}: WinAnimationProps) {
   // Held in a ref so a fresh callback identity from the parent cannot restart
   // the five seconds halfway through.
   const doneRef = useRef(onDone)
@@ -123,6 +137,12 @@ export function WinAnimation({ variant, onDone, rowIndex = 0, durationMs }: WinA
   }, [variant, rowIndex, durationMs])
 
   const style = { '--nd-win-row': String(rowIndex) } as CSSProperties
+
+  // The joke is the `nerdiest` variant's alone. The other four keep the
+  // original wording everywhere, iPhone included — including the static
+  // wordmark CSS shows them under prefers-reduced-motion.
+  const wordmark =
+    variant === 'nerdiest' && isIPhone ? strings.winWordmarkIPhone : strings.winWordmark
 
   return (
     // Decorative only. The result is already announced by the board's own live
@@ -185,7 +205,7 @@ export function WinAnimation({ variant, onDone, rowIndex = 0, durationMs }: WinA
       {/* Shown for `nerdiest`, and — via CSS alone — for all five once the
           player has asked for reduced motion. */}
       <div className="nd-win__wordmark">
-        <span className="nd-win__word">You are the Nerdiest</span>
+        <span className="nd-win__word">{wordmark}</span>
       </div>
     </div>
   )

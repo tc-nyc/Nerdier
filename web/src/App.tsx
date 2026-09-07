@@ -16,6 +16,7 @@ export function App() {
     onKeyPress,
     onDelete,
     onDeleteAtCursor,
+    onDeleteAtCursorOrBackspace,
     onMoveCursor,
     onSubmit,
     onNewGame,
@@ -64,6 +65,10 @@ export function App() {
       cursor={state.cursor}
       onCursorMove={onMoveCursor}
       onDeleteAtCursor={onDeleteAtCursor}
+      // The on-screen DELETE clears the tile the caret is on (falling back to a
+      // backspace when that tile is already empty). The physical Backspace key
+      // deliberately keeps its own meaning and stays on `onDelete`.
+      onDeleteAtSelection={onDeleteAtCursorOrBackspace}
       onKeyPress={onKeyPress}
       onDelete={onDelete}
       onSubmit={onSubmit}

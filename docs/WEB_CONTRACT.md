@@ -229,3 +229,102 @@ A joke, in the **How to Play** screen's *Winning* section.
   pressing the button twice must play it twice, so key any effect on a nonce
   rather than on the message text.
 - The Rules screen must remain scrollable and usable while it plays.
+
+---
+
+# Addendum 5 — three gameplay adjustments (principal's request)
+
+## A. No multiplying by zero (math-wizard)
+
+A ninth rule: **a multiplication may not have `0` as either operand.** `0*7=0`
+and `7*0=0` both become illegal, as does any `*0` or `0*` inside a longer
+expression such as `4+92*0=4`.
+
+Scope, deliberately narrow — this is about multiplication only:
+- `0+5=5`, `5-0=5`, `0-0+7=7` stay **legal**. Zero is still a fine operand.
+- `0/5=0` stays **legal**. Dividing zero by something is not multiplying by
+  zero. (Dividing *by* zero was already illegal.)
+
+Enforce it in **both** the generator and the validator, as with every other
+rule — the generator's final accept test is `validateEquation`, so this should
+follow automatically, but the shape table and the fallback list must be checked
+for entries that are now illegal.
+
+Give it a specific player-facing rejection message in the house style, e.g.
+`"No multiplying by zero"`.
+
+This shrinks the legal space. Report the new total so the senior developer can
+verify it independently against the previous 65,374.
+
+## B. On-screen DELETE clears the selected tile (coder + game-designer)
+
+Today the on-screen **DELETE** button backspaces — it clears the tile *before*
+the caret. The principal wants it to clear **the tile the caret is on**.
+
+- The on-screen DELETE button calls `onDeleteAtCursor` (`engine.clearAtCursor`)
+  rather than `onDelete`.
+- **The physical Backspace key is unchanged.** Backspace means "delete
+  backwards" on every keyboard on earth; changing it would be wrong. The
+  physical Delete key already clears at the caret and stays as is.
+
+**One decision the senior developer is making explicitly:** clearing strictly at
+the caret leaves the button dead whenever the caret sits on an empty tile — so a
+player on a phone, with no physical keyboard, could not clear a row by pressing
+DELETE repeatedly. So:
+
+> **If the caret's tile holds a character, clear it and leave the caret where it
+> is** (so the player can immediately type a replacement — the whole point of
+> selecting a tile). **If the caret's tile is already empty, fall back to
+> backspace**: clear the tile to the left and move the caret there.
+
+That gives both behaviours: fix-in-place on a filled tile, and
+press-repeatedly-to-clear on an empty one.
+
+`canDelete` must follow this: the button is enabled whenever *either* branch
+would do something — i.e. the caret tile is filled, **or** there is anything to
+the left to clear. A disabled-looking button that would have worked is as bad as
+an enabled one that does nothing.
+
+## C. An iPhone-only winning screen (game-designer)
+
+On **iPhone**, the `nerdiest` win variant reads
+**"Kathryn won, without drinking coffee!"** instead of "You are the Nerdiest".
+Everything else about that variant — timing, the capped flash rate, reduced
+motion — is unchanged. The other four variants are untouched, and non-iPhone
+devices see the original wording.
+
+Detection notes, because this is easy to get wrong:
+- Match iPhone (and iPod touch) on the user agent. **iPadOS reports itself as a
+  Mac**, so an iPad will see the normal text; that is acceptable for a joke.
+- User-agent sniffing is unreliable in general. That is tolerable *here* because
+  the consequence is only which joke appears — but it must be isolated in one
+  tiny helper, must never gate game logic, and must not throw when `navigator`
+  is unavailable (the logic tests run in plain node).
+
+---
+
+# Addendum 6 — no dividing zero either (principal's follow-up)
+
+Analysis after Addendum 5A landed showed that banning multiplication by zero
+left `0/1234=0` as **27% of the remaining space** — the same kind of non-puzzle,
+now hit far more often. The principal chose to ban it too.
+
+**A division may not have zero as its dividend.** As with multiplication, this is
+by **operand value, not written character**: `0/1234=0` goes, and so does any
+division whose left-hand side evaluates to zero.
+
+Zero remains legal elsewhere — `10-0-4=6`, `5-0+9=14`, `0+5*9=45` all stand, and
+a `0` *digit* inside a larger number (`9*40=360`, `20*5=100`) was never affected.
+
+Independently enumerated reference figures, for cross-checking:
+
+| rule set | legal 8-char equations |
+|---|---|
+| original | 65,374 |
+| + no multiplying by zero (by value) | **31,370** |
+| + no dividing zero (by value) | **17,960** |
+
+17,960 is still far more than any player will exhaust.
+
+The rules-screen copy from Addendum 5 says "*0/5=0 both stand*" — that is now
+**wrong** and must be corrected.

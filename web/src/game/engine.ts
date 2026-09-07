@@ -207,6 +207,68 @@ export class GameEngine {
     this.setTile(this.cursorIndex, emptyTile())
   }
 
+  /**
+   * The **on-screen DELETE button**. A hybrid of clear-at-caret and backspace:
+   *
+   * - Caret tile holds a character -> clear it and **leave the caret where it
+   *   is**, so the player can type the replacement straight away. That is the
+   *   whole point of having selected the tile.
+   * - Caret tile already empty -> fall back to `backspace()`: clear the tile to
+   *   the left and move there.
+   *
+   * Why the fallback rather than a strict clear-at-caret: strict clearing leaves
+   * the button dead whenever the caret sits on an empty tile, so a player on a
+   * phone with no physical keyboard could not clear a row by pressing DELETE
+   * repeatedly. The hybrid gives fix-in-place on a filled tile and
+   * press-repeatedly-to-clear on an empty one.
+   *
+   * Deliberately a **separate method** from `clearAtCursor()` and `backspace()`:
+   * the physical Delete key keeps its strict clear-in-place meaning and the
+   * physical Backspace key keeps "delete backwards" (including its last-tile
+   * exception). Only the on-screen button is hybrid.
+   *
+   * Note the fallback can never trip `backspace()`'s last-tile exception — that
+   * exception only fires when the caret tile is filled, which this branch has
+   * already ruled out.
+   */
+  deleteAtCursorOrBackspace(): void {
+    if (!this.editable) return
+
+    if (this.charAt(this.cursorIndex) !== null) {
+      this.setTile(this.cursorIndex, emptyTile())
+      return
+    }
+
+    this.backspace()
+  }
+
+  /**
+   * Whether `deleteAtCursorOrBackspace()` would change anything — the enabled
+   * state for the on-screen DELETE button.
+   *
+   * True when the caret tile is filled (branch one clears it), or when there is
+   * a tile to the left (branch two clears that tile and moves the caret onto it,
+   * which is an observable change even if the tile was already empty).
+   *
+   * False in exactly one live-game case: the caret is on tile 0 and tile 0 is
+   * empty, where both branches are no-ops. Note this is *not* `filledCount > 0`:
+   * a row holding characters only to the *right* of a caret parked at 0 has
+   * nothing for either branch to do.
+   *
+   * It is also a safe gate for the physical Backspace key: every state in which
+   * `backspace()` changes something is a state in which this is true.
+   */
+  get canDelete(): boolean {
+    if (!this.editable) return false
+    if (this.charAt(this.cursorIndex) !== null) return true
+    return this.cursorIndex > 0
+  }
+
+  /** The character at `index` of the active row, or `null` for a gap. */
+  private charAt(index: number): string | null {
+    return this.activeRow()?.tiles[index]?.char ?? null
+  }
+
   /** Replaces a single tile of the active row. Only ever touches the active row. */
   private setTile(index: number, tile: Tile): void {
     const row = this.activeRow()

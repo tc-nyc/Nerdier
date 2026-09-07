@@ -204,6 +204,237 @@ describe('commutativity', () => {
   })
 })
 
+// ---- no multiplying by zero ----------------------------------------------
+
+/**
+ * An independent restatement of the rule, written from the spec rather than
+ * lifted from equation.ts, so the two implementations can disagree and the fuzz
+ * will notice. True when any multiplication has zero as an operand *by value*.
+ */
+function multipliesByZero(lhs: string): boolean {
+  const nums = lhs.split(/[+\-*/]/).map(Number)
+  const ops = [...lhs].filter((c) => '+-*/'.includes(c))
+  let term = nums[0] ?? Number.NaN
+  for (let i = 0; i < ops.length; i++) {
+    const next = nums[i + 1] ?? Number.NaN
+    if (ops[i] === '*') {
+      if (term === 0 || next === 0) return true
+      term *= next
+    } else if (ops[i] === '/') {
+      if (next === 0) return false
+      term /= next
+    } else {
+      term = next
+    }
+  }
+  return false
+}
+
+/**
+ * The same trick for Addendum 6, again written from the spec rather than lifted
+ * from equation.ts. True when any division has zero as its dividend *by value*.
+ * Returns false the moment it meets a zero divisor, because dividing by zero is
+ * a different rule with its own, older message.
+ */
+function dividesZero(lhs: string): boolean {
+  const nums = lhs.split(/[+\-*/]/).map(Number)
+  const ops = [...lhs].filter((c) => '+-*/'.includes(c))
+  let term = nums[0] ?? Number.NaN
+  for (let i = 0; i < ops.length; i++) {
+    const next = nums[i + 1] ?? Number.NaN
+    if (ops[i] === '/') {
+      if (next === 0) return false
+      if (term === 0) return true
+      term /= next
+    } else if (ops[i] === '*') {
+      term *= next
+    } else {
+      term = next
+    }
+  }
+  return false
+}
+
+const ZERO_MUL = 'No multiplying by zero'
+const ZERO_DIV = 'No dividing zero'
+
+describe('no multiplying by zero', () => {
+  it('rejects a zero operand on either side of a *', () => {
+    // Every one of these was a legal puzzle before the rule: each arithmetic
+    // statement is true, so only the new rule can be rejecting them.
+    for (const eq of ['0*76+5=5', '70*0+5=5', '4+92*0=4', '0*7*10=0', '17*0+5=5']) {
+      expect(accepts(eq), `should reject ${eq}`).toBe(false)
+      expect(reason(eq), `wrong message for ${eq}`).toBe(ZERO_MUL)
+    }
+  })
+
+  it("rejects the principal's 0*7 and 7*0 in eight-tile form", () => {
+    // `0*7=0` and `7*0=0` are only five tiles, so the length rule fires first
+    // and the guess never reaches the arithmetic — that ordering is unchanged.
+    expect(accepts('0*7=0')).toBe(false)
+    expect(reason('0*7=0')).toBe("That's only 5 characters — equations are exactly 8")
+    expect(accepts('7*0=0')).toBe(false)
+    expect(reason('7*0=0')).toBe("That's only 5 characters — equations are exactly 8")
+    // At eight tiles the rule itself is what rejects them.
+    expect(reason('0*7*10=0')).toBe(ZERO_MUL) // contains 0*7
+    expect(reason('7*0*10=0')).toBe(ZERO_MUL) // contains 7*0
+    // And the longer form from the spec.
+    expect(reason('4+92*0=4')).toBe(ZERO_MUL)
+  })
+
+  it('leaves zero alone everywhere except as a multiplicand', () => {
+    // A zero operand is still a fine operand for + and -, and a zero *digit*
+    // inside a longer number is untouched: the 0 of `10` is not an operand.
+    for (const eq of ['0+5*9=45', '5*9+0=45', '10-0-4=6', '5-0+9=14']) {
+      expect(accepts(eq), `should still accept ${eq}`).toBe(true)
+    }
+    // A zero *digit* inside a multiplied operand is not a zero operand.
+    for (const eq of ['9*40=360', '20*5=100', '40*5=200']) {
+      expect(accepts(eq), `should still accept ${eq}`).toBe(true)
+    }
+  })
+
+  it('0/5 is not multiplying by zero — it now breaks the other zero rule', () => {
+    // Addendum 5 made this the deliberate boundary: `0/55+7=7` was legal because
+    // dividing zero is not multiplying by zero. Addendum 6 banned dividing zero
+    // too, so the equation is now rejected — but by the *other* rule, which is
+    // what this case still pins down. The evaluator is unchanged either way.
+    expect(evaluateExpression('0/5')).toBe(0)
+    expect(reason('0/55+7=7'), 'rejected as dividing zero, not as multiplying by zero').toBe(
+      ZERO_DIV,
+    )
+    expect(accepts('12/0=120')).toBe(false)
+    expect(reason('12/0=120')).toBe("Can't divide by zero")
+  })
+
+  it('catches a zero that only appears part-way through a term', () => {
+    // `0/1*10` writes no `0` next to the `*`, but the left operand of that
+    // multiplication *is* zero once `0/1` has been worked out — so it is
+    // multiplying by zero and is rejected. This is the strict reading: the rule
+    // is about operand values, not about which characters sit next to the `*`.
+    expect(accepts('0/1*10=0')).toBe(false)
+    expect(reason('0/1*10=0')).toBe(ZERO_MUL)
+  })
+
+  it('is a puzzle rule, not an arithmetic one', () => {
+    // evaluateExpression is deliberately unchanged: it still does the sum.
+    // Legality is validateEquation's job, exactly as with "needs an operator".
+    expect(evaluateExpression('0*7')).toBe(0)
+    expect(evaluateExpression('4+92*0')).toBe(4)
+    expect(evaluateExpression('0/1*10')).toBe(0)
+  })
+
+  it('agrees with an independently written check across the legal space', () => {
+    const samples = [
+      '0*76+5=5',
+      '70*0+5=5',
+      '4+92*0=4',
+      '0/1*10=0',
+      '0+5*9=45',
+      '10-0-4=6',
+      '0/55+7=7',
+      '12+34=46',
+      '12*9=108',
+    ]
+    for (const eq of samples) {
+      const lhs = lhsOf(eq)
+      // Every sample balances arithmetically, so acceptance turns purely on the
+      // two zero rules.
+      expect(accepts(eq), `disagreement on ${eq}`).toBe(
+        !multipliesByZero(lhs) && !dividesZero(lhs),
+      )
+    }
+  })
+})
+
+// ---- no dividing zero ------------------------------------------------------
+
+describe('no dividing zero', () => {
+  it('rejects a division whose dividend is zero', () => {
+    // The principal's example plus the same shape elsewhere in an expression.
+    // Every one of these was a legal puzzle until Addendum 6: each arithmetic
+    // statement is true and nothing is multiplied by zero, so only the new rule
+    // can be rejecting them.
+    for (const eq of ['0/1234=0', '0/55+7=7', '9-0/12=9', '0/12+9=9', '7+0/25=7']) {
+      expect(accepts(eq), `should reject ${eq}`).toBe(false)
+      expect(reason(eq), `wrong message for ${eq}`).toBe(ZERO_DIV)
+    }
+  })
+
+  it('catches a zero dividend that is evaluated rather than written', () => {
+    // `0/16/2` divides zero twice: the written `0/16`, and then a second
+    // division whose dividend is only zero once `0/16` has been worked out. The
+    // rule is read by operand value, so the chain is rejected as a whole.
+    //
+    // A by-value zero dividend cannot occur without a written one: inside a
+    // multiplicative term the running value only reaches zero through `*0`
+    // (already illegal) or through a `0/x` that is itself a written violation,
+    // and `+`/`-` start the next term at its written operand. So this case
+    // pins the evaluated reading rather than isolating it.
+    for (const eq of ['0/16/2=0', '0/12/6=0', '0/2/34=0']) {
+      expect(accepts(eq), `should reject ${eq}`).toBe(false)
+      expect(reason(eq), `wrong message for ${eq}`).toBe(ZERO_DIV)
+    }
+  })
+
+  it('does not steal the divide-by-zero message', () => {
+    // Dividing *by* zero keeps its own older, more specific wording.
+    expect(reason('12/0=120')).toBe("Can't divide by zero")
+    expect(reason('12/0=120')).not.toBe(ZERO_DIV)
+    // `0/0` breaks both readings at once; the divisor is the more specific
+    // complaint, so it wins.
+    expect(reason('0/0+55=5')).toBe("Can't divide by zero")
+    expect(reason('5+12/0=5')).toBe("Can't divide by zero")
+  })
+
+  it('leaves the multiplication message alone where both rules apply', () => {
+    // `0/1*10` divides zero and then multiplies by it. Reporting order is
+    // unchanged from Addendum 5: multiplication is named.
+    expect(reason('0/1*10=0')).toBe(ZERO_MUL)
+    expect(reason('0/1*10=0')).not.toBe(ZERO_DIV)
+  })
+
+  it('leaves zero alone everywhere except as a dividend or a multiplicand', () => {
+    // Zero is still a fine operand for + and -, and unaffected inside a number.
+    for (const eq of ['10-0-4=6', '5-0+9=14', '0+5*9=45', '0+9*7=63']) {
+      expect(accepts(eq), `should still accept ${eq}`).toBe(true)
+    }
+    // A zero *digit* inside a longer number is not a zero operand, whether that
+    // number is multiplied or divided.
+    for (const eq of ['9*40=360', '20*5=100', '100/2=50', '105/5=21']) {
+      expect(accepts(eq), `should still accept ${eq}`).toBe(true)
+    }
+  })
+
+  it('is a puzzle rule, not an arithmetic one', () => {
+    // evaluateExpression is deliberately unchanged: it still does the sum.
+    expect(evaluateExpression('0/1234')).toBe(0)
+    expect(evaluateExpression('0/16/2')).toBe(0)
+    expect(evaluateExpression('9-0/12')).toBe(9)
+  })
+
+  it('agrees with an independently written check', () => {
+    const samples = [
+      '0/1234=0',
+      '0/55+7=7',
+      '9-0/12=9',
+      '0/16/2=0',
+      '0/1*10=0',
+      '10-0-4=6',
+      '0+5*9=45',
+      '100/2=50',
+      '12+34=46',
+      '1+9/1=10',
+    ]
+    for (const eq of samples) {
+      const lhs = lhsOf(eq)
+      expect(accepts(eq), `disagreement on ${eq}`).toBe(
+        !multipliesByZero(lhs) && !dividesZero(lhs),
+      )
+    }
+  })
+})
+
 // ---- generator ------------------------------------------------------------
 
 describe('generator', () => {
@@ -218,7 +449,43 @@ describe('generator', () => {
         v.ok,
         `generator emitted an equation its own validator rejects: ${eq} (${v.ok ? '' : v.reason})`,
       ).toBe(true)
+      // Checked independently of the validator, so a hole in one would not hide
+      // a hole in the other.
+      expect(
+        multipliesByZero(lhsOf(eq)),
+        `generator emitted a zero-operand multiplication: ${eq}`,
+      ).toBe(false)
+      expect(dividesZero(lhsOf(eq)), `generator emitted a zero dividend: ${eq}`).toBe(false)
     }
+  })
+
+  it('never falls back to an equation that breaks a rule', () => {
+    // The fallback list only fires if rejection sampling exhausts MAX_ATTEMPTS,
+    // which effectively never happens — so it is exactly the sort of table that
+    // rots unnoticed. A constant rng can satisfy no shape, so every draw fails
+    // and the very last call to the rng is the one that indexes the fallbacks.
+    // Count that call, then replay with each index forced, to reach all of them.
+    let calls = 0
+    generateEquation(() => {
+      calls++
+      return 0
+    })
+
+    const seen = new Set<string>()
+    for (let i = 0; i < 40; i++) {
+      let n = 0
+      const eq = generateEquation(() => {
+        n++
+        return n === calls ? i / 40 : 0
+      })
+      seen.add(eq)
+      const v = validateEquation(eq)
+      expect(v.ok, `fallback ${eq} is not a legal equation (${v.ok ? '' : v.reason})`).toBe(true)
+      expect(multipliesByZero(lhsOf(eq)), `fallback ${eq} multiplies by zero`).toBe(false)
+      expect(dividesZero(lhsOf(eq)), `fallback ${eq} divides zero`).toBe(false)
+    }
+    // The 40 forced indices sweep the whole table, whatever its length.
+    expect(seen.size, 'the sweep should reach every fallback').toBeGreaterThanOrEqual(12)
   })
 
   it('produces a real spread of answers and operators', () => {

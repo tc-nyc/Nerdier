@@ -434,3 +434,132 @@ describe('free cursor — crossword-style entry', () => {
     expect(engine.cursor, 'the player edits in place, so the caret must not jump').toBe(2)
   })
 })
+
+describe('on-screen DELETE — clear at the caret, else backspace', () => {
+  it('clears the caret tile in place, leaving the caret and the neighbours alone', () => {
+    const engine = new GameEngine(stubRules({}), '12+34=46')
+    type(engine, '12+34=46')
+
+    engine.moveCursor(3)
+    engine.deleteAtCursorOrBackspace()
+
+    expect(rowPattern(engine), 'only tile 3 goes').toBe('12+_4=46')
+    expect(engine.cursor, 'the caret stays on the tile it cleared').toBe(3)
+
+    // The point of staying put: the replacement can be typed immediately, into
+    // the same position.
+    engine.keyPress('9')
+    expect(rowPattern(engine)).toBe('12+94=46')
+  })
+
+  it('falls back to backspace when the caret tile is already empty', () => {
+    const engine = new GameEngine(stubRules({}), '12+34=46')
+    type(engine, '12+34=46')
+
+    // Tile 3 is now the empty one and the caret is on it.
+    engine.moveCursor(3)
+    engine.deleteAtCursorOrBackspace()
+    expect(rowPattern(engine)).toBe('12+_4=46')
+
+    engine.deleteAtCursorOrBackspace()
+
+    expect(rowPattern(engine), 'the tile to the left goes').toBe('12__4=46')
+    expect(engine.cursor, 'and the caret follows it').toBe(2)
+  })
+
+  it('empties a full row under repeated presses from the last tile', () => {
+    // The phone case: no physical keyboard, so DELETE must be able to clear the
+    // whole row on its own.
+    const engine = new GameEngine(stubRules({}), '12+34=46')
+    type(engine, '12+34=46')
+    expect(engine.cursor).toBe(EQUATION_LENGTH - 1)
+
+    const walk: string[] = []
+    for (let i = 0; i < 9; i++) {
+      expect(engine.canDelete, `press ${i + 1} must be enabled`).toBe(i < 8)
+      engine.deleteAtCursorOrBackspace()
+      walk.push(`${rowPattern(engine)}@${engine.cursor}`)
+    }
+
+    expect(walk).toEqual([
+      '12+34=4_@7', // tile 7 held a character: cleared in place, caret stays
+      '12+34=__@6', // tile 7 now empty: backspace clears tile 6 and moves there
+      '12+34___@5', // and from here every press is the backspace fallback
+      '12+3____@4',
+      '12+_____@3',
+      '12______@2',
+      '1_______@1',
+      '________@0',
+      '________@0', // caret at 0 on an empty tile: nothing left to do
+    ])
+    expect(rowPattern(engine), 'DELETE alone can empty the row').toBe('________')
+  })
+
+  it('clears tile 0 in place when the caret is at 0 and tile 0 is filled', () => {
+    const engine = new GameEngine(stubRules({}), '12+34=46')
+    type(engine, '12+34=46')
+
+    engine.moveCursor(0)
+    expect(engine.canDelete).toBe(true)
+    engine.deleteAtCursorOrBackspace()
+
+    expect(rowPattern(engine)).toBe('_2+34=46')
+    expect(engine.cursor, 'clear-in-place, so the caret does not move').toBe(0)
+  })
+
+  it('does nothing at tile 0 of an empty row, and reports itself disabled', () => {
+    const engine = new GameEngine(stubRules({}), '12+34=46')
+
+    expect(engine.cursor).toBe(0)
+    expect(engine.canDelete, 'nothing to clear and nowhere to go back to').toBe(false)
+
+    engine.deleteAtCursorOrBackspace()
+
+    expect(rowPattern(engine)).toBe('________')
+    expect(engine.cursor).toBe(0)
+  })
+
+  it('is disabled at tile 0 when the row is filled only to the RIGHT of the caret', () => {
+    // The old `filledCount > 0` rule called this enabled; both branches are
+    // no-ops here, so the button would have looked live and done nothing.
+    const engine = new GameEngine(stubRules({}), '12+34=46')
+    engine.moveCursor(4)
+    type(engine, '99')
+    engine.moveCursor(0)
+
+    expect(rowPattern(engine)).toBe('____99__')
+    expect(engine.canDelete).toBe(false)
+  })
+
+  it('is enabled on an empty tile past 0, where the backspace fallback still acts', () => {
+    const engine = new GameEngine(stubRules({}), '12+34=46')
+    engine.moveCursor(5)
+
+    expect(engine.canDelete).toBe(true)
+    engine.deleteAtCursorOrBackspace()
+    expect(engine.cursor, 'the caret moved onto the tile it cleared').toBe(4)
+  })
+
+  it('is disabled, and does nothing, once the game is over', () => {
+    const engine = new GameEngine(stubRules({ accept: ['12+34=46'] }), '12+34=46')
+    type(engine, '12+34=46')
+    engine.submit()
+    expect(engine.status).toBe('won')
+
+    expect(engine.canDelete).toBe(false)
+    engine.deleteAtCursorOrBackspace()
+    expect(rowPattern(engine), 'a submitted row is not editable').toBe('12+34=46')
+  })
+
+  it('leaves the physical Delete key strict — clearAtCursor never backspaces', () => {
+    const engine = new GameEngine(stubRules({}), '12+34=46')
+    type(engine, '12+34=46')
+
+    engine.moveCursor(3)
+    engine.clearAtCursor()
+    engine.clearAtCursor()
+
+    expect(rowPattern(engine), 'the second press has nothing to clear').toBe('12+_4=46')
+    expect(engine.cursor, 'and strict clear never moves the caret').toBe(3)
+  })
+})

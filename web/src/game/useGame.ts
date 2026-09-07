@@ -79,7 +79,19 @@ export interface GameUiState {
   readonly filledCount: number
   /** Enter is only meaningful once *every* tile is filled and the game is live. */
   readonly canSubmit: boolean
-  /** Backspace is only meaningful when the active row has something in it. */
+  /**
+   * Enabled state for the DELETE button, which calls `onDeleteAtCursorOrBackspace`.
+   *
+   * True when that call would change something: the caret tile is filled (it
+   * gets cleared in place), or the caret is past tile 0 (the backspace fallback
+   * clears the tile to the left and moves there). False on tile 0 of a row whose
+   * tile 0 is empty, where both branches are no-ops.
+   *
+   * Deliberately **not** `filledCount > 0`: a row holding characters only to the
+   * right of a caret parked at 0 offers nothing for either branch to do. Also a
+   * safe gate for the physical Backspace key — anything backspace would change
+   * is covered by this flag.
+   */
   readonly canDelete: boolean
 }
 
@@ -100,8 +112,13 @@ export interface UseGameResult {
   readonly onKeyPress: (c: string) => void
   /** Backspace: clears the tile before the caret and moves there; at 0 clears tile 0. */
   readonly onDelete: () => void
-  /** Delete: clears the tile at the caret without moving it. */
+  /** Delete: clears the tile at the caret without moving it. Physical Delete key. */
   readonly onDeleteAtCursor: () => void
+  /**
+   * The on-screen DELETE button: clears the caret's tile in place when it holds
+   * a character, otherwise backspaces. Gate it with `state.canDelete`.
+   */
+  readonly onDeleteAtCursorOrBackspace: () => void
   /** Tile click: moves the caret. Clamped, and ignored once the game is over. */
   readonly onMoveCursor: (index: number) => void
   /** ArrowLeft. */
@@ -141,7 +158,9 @@ function stateFrom(engine: GameEngine, errorMessage: string | null, errorId: num
     // must not be submittable, and `isRowComplete` is the only check that sees
     // the gap.
     canSubmit: !isGameOver && isRowComplete(row),
-    canDelete: !isGameOver && filledCount(row) > 0,
+    // Owned by the engine, so the button's enabled state and the button's
+    // behaviour can never drift apart.
+    canDelete: engine.canDelete,
   }
 }
 
@@ -189,6 +208,11 @@ export function useGame(options?: UseGameOptions): UseGameResult {
 
   const onDeleteAtCursor = useCallback(() => {
     engineRef.current?.clearAtCursor()
+    publish(null)
+  }, [publish])
+
+  const onDeleteAtCursorOrBackspace = useCallback(() => {
+    engineRef.current?.deleteAtCursorOrBackspace()
     publish(null)
   }, [publish])
 
@@ -256,6 +280,7 @@ export function useGame(options?: UseGameOptions): UseGameResult {
     onKeyPress,
     onDelete,
     onDeleteAtCursor,
+    onDeleteAtCursorOrBackspace,
     onMoveCursor,
     onCursorLeft,
     onCursorRight,

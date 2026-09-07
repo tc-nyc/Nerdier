@@ -45,6 +45,9 @@ export const strings = {
   rulesMaths: [
     'Standard order of operations applies. Multiplication and division resolve before addition and subtraction, so 2+3*4=14, not 20.',
     'Division must come out whole. 7/2 is rejected.',
+    'No multiplying by zero. 0*7=0 and 7*0=0 are rejected, and so is a times-zero buried further in, like 4+92*0=4. It is the value of the operand that counts, not the character beside the sign.',
+    'No dividing zero either. 0/1234=0 is rejected, as is any division whose left-hand side works out to zero. Dividing by zero was never possible in the first place; this is the other side of the slash.',
+    'The digit 0 itself is not banned. 10-0-4=6 and 5-0+9=14 both stand, and a 0 inside a longer number is never a problem: 9*40=360 and 20*5=100 are perfectly good equations.',
     'Nothing may go negative, including intermediate steps. 5-8+4=1 is rejected, because 5-8 dips below zero on the way.',
   ],
 
@@ -69,6 +72,12 @@ export const strings = {
   rulesWinningKathryn: 'If Kathryn starts drinking coffee, she wins the game.',
   rulesKathrynActivator: 'Kathryn drank coffee',
   rulesKathrynFailure: "Verification failed, Kathryn doesn't drink coffee",
+
+  /* Win celebration. The wordmark the `nerdiest` variant shows, and the one
+   * every variant falls back to under prefers-reduced-motion. On an iPhone the
+   * `nerdiest` variant says something else — the principal's joke, verbatim. */
+  winWordmark: 'You are the Nerdiest',
+  winWordmarkIPhone: 'Kathryn won, without drinking coffee!',
 
   /* Progress */
   progressTitle: 'Progress',
